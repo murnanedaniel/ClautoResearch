@@ -15,8 +15,8 @@ Mon → Wed                          Wed → Fri
 2. Design minimal study            4. Get something working
         │                          5. Run proof-of-concept
         ▼                                  │
-  📊 Wednesday slides                      ▼
-  (supervisor reviews)              📊 Friday slides
+  Wednesday slides                         ▼
+  (supervisor reviews)              Friday slides
                                    (supervisor reviews,
                                     sets direction/velocity)
 ```
@@ -41,26 +41,28 @@ Then in Claude Code:
 /new-project "Your research topic here"
 ```
 
-This scaffolds a project under `projects/`. Then:
+This scaffolds a project under `projects/`. From there, just talk to Claude — it reads the system instructions from `CLAUDE.md`, picks up project state from `state.yaml`, and knows what to do. It will work through the R&D cycle steps and automatically produce slide decks at each gate for your review.
 
-```
-/rd-cycle       # Run the next R&D step
-/checkin        # Generate a check-in slide deck for review
-/write          # Enter paper-writing mode (when ready)
-```
+Two explicit commands:
+- `/new-project "topic"` — scaffold a new research project
+- `/write` — switch to paper-writing mode (when you're ready)
 
-That's it. Claude reads the system instructions from `CLAUDE.md`, picks up project state from `projects/<name>/state.yaml`, and knows what to do.
+Everything else (literature search, experiment design, coding, running studies, producing check-in slides) happens naturally as Claude follows the workflow.
+
+A **hook** enforces check-in discipline: if Claude is past a gate point without having produced slides, it gets a reminder injected into its context before it can do anything else. The student always shows up with a deck.
 
 ## Project Structure
 
 ```
 ClautoResearch/
 ├── CLAUDE.md                    # System instructions (the "constitution")
-├── .claude/skills/              # Slash commands
-│   ├── new-project/SKILL.md     #   /new-project — scaffold a research project
-│   ├── rd-cycle/SKILL.md        #   /rd-cycle — run next cycle step
-│   ├── checkin/SKILL.md         #   /checkin — generate slide deck
-│   └── write/SKILL.md           #   /write — enter writing phase
+├── .claude/
+│   ├── skills/                  # Slash commands
+│   │   ├── new-project/         #   /new-project — scaffold a research project
+│   │   └── write/               #   /write — enter writing phase
+│   ├── hooks/
+│   │   └── enforce_checkin.sh   #   Ensures slides are produced at gate points
+│   └── settings.json            #   Hook configuration
 ├── templates/
 │   └── checkin_template.tex     # Beamer slide deck template
 ├── literature/                  # System-level literature reviews
@@ -83,7 +85,7 @@ The system (root) defines *how* research is done. Each project (under `projects/
 
 - **Claude-native**: Uses Claude Code skills, CLAUDE.md hierarchy, and hooks — not a Python orchestration framework
 - **Supervisor in the loop**: Every phase gate is a slide deck review. No auto-approve mode
-- **Minimal by design**: One model, one repo, four slash commands
+- **Minimal by design**: One model, one repo, two slash commands, one hook
 - **Real research workflow**: Modeled on how PhD advisors actually mentor students, not on pipeline diagrams
 
 ## License
