@@ -1,0 +1,124 @@
+\documentclass[aspectratio=169,11pt]{beamer}
+
+\usetheme{metropolis}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{hyperref}
+
+% Colors
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codebg}{rgb}{0.97,0.97,0.97}
+
+% Code listing style
+\lstset{
+  backgroundcolor=\color{codebg},
+  basicstyle=\ttfamily\scriptsize,
+  breaklines=true,
+  captionpos=b,
+  commentstyle=\color{codegreen},
+  keywordstyle=\color{blue},
+  numberstyle=\tiny\color{codegray},
+  showstringspaces=false,
+  frame=single,
+  framerule=0pt,
+}
+
+% Metadata — fill these in per check-in
+\newcommand{\cyclenumber}{XX}
+\newcommand{\checkinday}{Wednesday}  % or Friday
+\newcommand{\projecttitle}{ClautoResearch}
+\newcommand{\directionval}{--}
+\newcommand{\velocityval}{--}
+
+\title{Cycle \cyclenumber{} — \checkinday{} Check-in}
+\subtitle{\projecttitle}
+\date{\today}
+\author{Claude (PhD Student)}
+\institute{Supervised by: Daniel Murnane}
+
+\begin{document}
+
+\maketitle
+
+% ============================================================
+% SLIDE 1: Status & Context
+% ============================================================
+\begin{frame}{Where We Are}
+  \begin{columns}[T]
+    \begin{column}{0.5\textwidth}
+      \textbf{Cycle:} \cyclenumber \\
+      \textbf{Check-in:} \checkinday \\
+      \textbf{Direction:} \directionval\% \\
+      \textbf{Velocity:} \velocityval\%
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      % Brief context: what was the plan coming into this half?
+      \textbf{Goal this half:} \\
+      \begin{itemize}
+        \item TODO
+      \end{itemize}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% ============================================================
+% SLIDE 2: What Was Done
+% ============================================================
+\begin{frame}{What Was Done}
+  % Literature findings (Wed) or build/run progress (Fri)
+  \begin{itemize}
+    \item TODO
+  \end{itemize}
+\end{frame}
+
+% ============================================================
+% SLIDE 3: Key Results / Findings
+% ============================================================
+\begin{frame}{Key Results}
+  % Plots, tables, code snippets, data explorations
+  % \includegraphics[width=\textwidth]{results/figure.pdf}
+  TODO: plots, tables, or key findings here
+\end{frame}
+
+% ============================================================
+% SLIDE 4: Hypotheses & Interpretation
+% ============================================================
+\begin{frame}{Hypotheses \& Interpretation}
+  % What do the results mean? What's the working hypothesis?
+  \begin{itemize}
+    \item TODO
+  \end{itemize}
+\end{frame}
+
+% ============================================================
+% SLIDE 5: Questions for Supervisor
+% ============================================================
+\begin{frame}{Questions for Supervisor}
+  % Things that need expertise, experience, or a decision
+  \begin{enumerate}
+    \item TODO
+  \end{enumerate}
+\end{frame}
+
+% ============================================================
+% SLIDE 6: Next Steps & Proposed Direction/Velocity
+% ============================================================
+\begin{frame}{Next Steps}
+  \textbf{Proposed next steps:}
+  \begin{itemize}
+    \item TODO
+  \end{itemize}
+
+  \vspace{1em}
+
+  % Friday only: proposed direction/velocity for next cycle
+  % \textbf{Proposed for next cycle:} \\
+  % Direction: XX\% $\rightarrow$ YY\% \\
+  % Velocity: XX\% $\rightarrow$ YY\%
+\end{frame}
+
+\end{document}
