@@ -8,39 +8,43 @@ This repository is the **system** — it defines how research is done. Actual re
 
 Research proceeds in cycles. Each cycle is one "week" with two halves and two check-ins.
 
-### First half (Mon → Wed): Explore & Design
+### First half (Mon → Tue): Explore & Design
 
 1. **Explore & Define** — Search literature (Semantic Scholar, arXiv, Google Scholar via web search). Identify state of the art. Simultaneously refine the research question. Save findings to `cycles/cycle_NN/notes.md` and the project's `literature/`.
 
-2. **Design Minimal PoC** — Based on literature and the research question, define the novel contribution. Design the most-minimal study to test it. Document the design in `cycles/cycle_NN/notes.md`.
+2. **Design Minimal PoC** — Based on literature and the research question, define the novel contribution. Design the most-minimal study to test it. Document the design in `cycles/cycle_NN/notes.md`. **"Minimal" means what can be done THIS Wed-Sun, not the whole project.** The project plan (`plan.md`) describes the full arc; the PoC is one step of it.
 
 **After completing steps 1-2, you MUST produce a Wednesday check-in slide deck before doing anything else.**
 
-### Wednesday check-in slide deck (~4-6 slides)
+### Wednesday morning check-in slide deck (~4-6 slides)
 - Slide 1: Status & Context (cycle number, direction/velocity, goal for this half)
 - Slide 2: Literature Findings (key papers, state of the art, gaps identified)
 - Slide 3: Research Question (the question being asked or refined, with rationale)
 - Slide 4: Proposed Minimal Study (what to build, what to measure, what baselines)
 - Slide 5: Questions for Supervisor (things needing expertise or a decision)
-- Slide 6: Next Steps (what will be done in the second half if approved)
+- Slide 6: Next Steps (what will be done in the second half **this cycle only**)
 
-**IMPORTANT: Scope the proposed study and next steps to THIS Wed-Sun only, not the whole project.** The project plan (`plan.md`) describes the full arc. The Wednesday slides propose what to do *this week*. A good Wed-Sun plan ends with ONE concrete deliverable — a working data loader, a baseline AUC number, a single trained model. Not "build the full pipeline and generate the final plot." If the full experiment would take multiple cycles, propose only the first step.
+**Scoping rule for slides 4 and 6:** A good Wed-Sun plan ends with ONE concrete deliverable. Not "build the full pipeline, train 5 models, and generate the final figure." Ask yourself: "If I only complete steps 3-4 (set up + GSW) and run out of time before step 5, what do I have?" If the answer is "nothing useful," the plan is too ambitious.
+
+Example — if the project goal is "show curriculum learning preserves AUC across stages":
+- **Wrong** (whole project): "Build data loaders for all stages, train on each, run curriculum, generate money plot"
+- **Right** (one cycle): "Build data loader for stage 1, get transformer training on it, report baseline AUC vs logistic regression"
 
 **Be visual.** A picture is worth a thousand words. Every check-in deck should include multiple plots, tables, and visualizations — data distributions, feature comparisons, heatmaps, architecture diagrams, training curves, result tables. Generate plots during exploration and save them to `cycles/cycle_NN/results/` for inclusion via `\includegraphics`. Never present findings as bullet points when a figure would be clearer.
 
 **Stop. Wait for supervisor approval before proceeding to the second half.**
 
-### Second half (Wed → Fri): Build & Run
+### Second half (Wed → Sun): Build & Run
 
 3. **Set Up** — Explore data sources, required tools, set up environment. Create code scaffolding in `cycles/cycle_NN/code/`.
 
-4. **Get Something Working (GSW)** — Write and run code to get an end-to-end pipeline working. Results can be garbage — the goal is proving the machinery runs. Save outputs to `cycles/cycle_NN/results/`.
+4. **Get Something Working (GSW)** — Write and run code to get an end-to-end pipeline working. Results can be garbage — the goal is proving the machinery runs. Save outputs to `cycles/cycle_NN/results/`. **This is the most important step.** If you only get this far, the cycle was still a success.
 
-5. **Run PoC Study** — Run the actual minimal study designed in step 2. Collect real results. Generate plots. Save to `cycles/cycle_NN/results/`.
+5. **Run PoC Study** — Run the actual minimal study designed in step 2. Collect real results. Generate plots. Save to `cycles/cycle_NN/results/`. This builds on the working pipeline from step 4 — it should be a small extension, not a new project.
 
-**After completing steps 3-5, you MUST produce a Friday check-in slide deck before doing anything else.**
+**After completing steps 3-5, you MUST produce a Monday check-in slide deck before doing anything else.**
 
-### Friday check-in slide deck (~4-6 slides)
+### Monday morning check-in slide deck (~4-6 slides)
 - Slide 1: Status & Context (cycle number, direction/velocity, goal for this half)
 - Slide 2: What Was Built (code architecture, key implementation details)
 - Slide 3: Results (plots, tables, metrics — use `\includegraphics` for generated figures)
@@ -48,7 +52,7 @@ Research proceeds in cycles. Each cycle is one "week" with two halves and two ch
 - Slide 5: Questions for Supervisor
 - Slide 6: Next Steps + **Proposed direction/velocity for next cycle**
 
-**Stop. Wait for supervisor approval. After approval, kick off any approved longer experiments as background jobs ("weekend runs"), then start the next cycle.**
+**Stop. Wait for supervisor approval. After approval, start the next cycle.**
 
 ## Producing Slide Decks
 
@@ -60,7 +64,7 @@ Research proceeds in cycles. Each cycle is one "week" with two halves and two ch
 
 ## Cycle Transitions
 
-After Friday approval: increment cycle number in `state.yaml`, reset step to 1, apply any direction/velocity adjustments the supervisor specified. Start the next cycle's step 1.
+After Monday approval: increment cycle number in `state.yaml`, reset step to 1, apply any direction/velocity adjustments the supervisor specified. Start the next cycle's step 1.
 
 ## Cycle Notes
 
@@ -78,7 +82,7 @@ Two numbers (0-100) in the project's `state.yaml`:
 - **Direction**: How defined is the research question? 0 = open exploration, 100 = singular focus.
 - **Velocity**: How fast are we moving? 0 = reading/thinking, 100 = sprinting.
 
-Propose new values at each Friday check-in. The supervisor may override.
+Propose new values at each Monday check-in. The supervisor may override.
 
 **How these affect your work:**
 - Low direction → explore broadly, consider alternatives, read widely

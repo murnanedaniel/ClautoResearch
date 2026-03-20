@@ -3,6 +3,8 @@
 # Runs on every UserPromptSubmit. If the student is past a gate
 # (step 2 or step 5) without having produced slides, injects a
 # reminder into Claude's context.
+#
+# Rhythm: Mon-Tue explore → Wednesday check-in → Wed-Sun build → Monday check-in
 
 set -euo pipefail
 
@@ -43,20 +45,20 @@ if [ "$STEP" -eq 2 ]; then
 {
   "hookSpecificOutput": {
     "hookEventName": "UserPromptSubmit",
-    "additionalContext": "GATE CHECK: You have completed steps 1-2 of cycle $CYCLE but have NOT produced the Wednesday check-in slide deck yet. You MUST produce the Wednesday slide deck before doing any other work. See CLAUDE.md for the Wednesday slide content specification. Copy the template from templates/checkin_template.tex, fill it in with real content from your exploration, compile it, and present it to the supervisor."
+    "additionalContext": "GATE CHECK: You have completed steps 1-2 of cycle $CYCLE but have NOT produced the Wednesday check-in slide deck yet. You MUST produce the Wednesday slide deck before doing any other work. See CLAUDE.md for the Wednesday slide content specification. Remember: scope slides 4 and 6 to THIS Wed-Sun only — one concrete deliverable, not the whole project."
   }
 }
 EOF
         exit 0
     fi
 elif [ "$STEP" -eq 5 ]; then
-    # Friday gate: steps 3-5 done, need Friday slides
-    if ! ls "$SLIDES_DIR"/cycle_*_friday.pdf >/dev/null 2>&1; then
+    # Monday gate: steps 3-5 done, need Monday slides
+    if ! ls "$SLIDES_DIR"/cycle_*_monday.pdf >/dev/null 2>&1; then
         cat <<EOF
 {
   "hookSpecificOutput": {
     "hookEventName": "UserPromptSubmit",
-    "additionalContext": "GATE CHECK: You have completed steps 3-5 of cycle $CYCLE but have NOT produced the Friday check-in slide deck yet. You MUST produce the Friday slide deck (including proposed direction/velocity for next cycle) before doing any other work. See CLAUDE.md for the Friday slide content specification. Copy the template from templates/checkin_template.tex, fill it in with real content from your execution work, compile it, and present it to the supervisor."
+    "additionalContext": "GATE CHECK: You have completed steps 3-5 of cycle $CYCLE but have NOT produced the Monday check-in slide deck yet. You MUST produce the Monday slide deck (including proposed direction/velocity for next cycle) before doing any other work. See CLAUDE.md for the Monday slide content specification."
   }
 }
 EOF
