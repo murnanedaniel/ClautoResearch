@@ -31,22 +31,21 @@ Wed → Sun: Execution
 
 When results are ready, a separate **writing phase** drafts the paper — and can drop back into R&D when gaps appear.
 
-## Quick Start
+## Try It
+
+```bash
+git clone git@github.com:murnanedaniel/ClautoResearch.git && cd ClautoResearch && claude
+```
+
+Then type: `/new-project "Your research topic"`
+
+That's it. Claude takes it from there.
+
+## How It Works (details)
 
 **Prerequisites**: [Claude Code](https://claude.com/claude-code) installed, `pdflatex` available.
 
-```bash
-git clone git@github.com:murnanedaniel/ClautoResearch.git
-cd ClautoResearch
-```
-
-Then in Claude Code:
-
-```
-/new-project "Your research topic here"
-```
-
-This scaffolds a project under `projects/` and starts a conversation about the project plan. From there, just talk to Claude — it reads the system instructions from `CLAUDE.md`, picks up project state from `state.yaml`, and knows what to do. It will work through the R&D cycle steps and automatically produce slide decks at each gate for your review.
+`/new-project` scaffolds a project under `projects/` and starts a conversation about the project plan. From there, just talk to Claude — it reads the system instructions from `CLAUDE.md`, picks up project state from `state.yaml`, and knows what to do. It will work through the R&D cycle steps and automatically produce slide decks at each gate for your review.
 
 Two explicit commands:
 - `/new-project "topic"` — scaffold a new research project
