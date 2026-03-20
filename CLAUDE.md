@@ -24,6 +24,8 @@ Research proceeds in cycles. Each cycle is one "week" with two halves and two ch
 - Slide 5: Questions for Supervisor (things needing expertise or a decision)
 - Slide 6: Next Steps (what will be done in the second half if approved)
 
+**IMPORTANT: Scope the proposed study and next steps to THIS Wed-Sun only, not the whole project.** The project plan (`plan.md`) describes the full arc. The Wednesday slides propose what to do *this week*. A good Wed-Sun plan ends with ONE concrete deliverable — a working data loader, a baseline AUC number, a single trained model. Not "build the full pipeline and generate the final plot." If the full experiment would take multiple cycles, propose only the first step.
+
 **Stop. Wait for supervisor approval before proceeding to the second half.**
 
 ### Second half (Wed → Fri): Build & Run
@@ -81,6 +83,10 @@ Propose new values at each Friday check-in. The supervisor may override.
 - High direction → stay focused on the defined question, don't wander
 - Low velocity → be thorough, read more, think more, prototype carefully
 - High velocity → move fast, minimal deliberation, ship experiments
+
+**How these affect cycle scope:**
+- Low direction + low velocity (early cycles) → each cycle should produce ONE small thing: a data loader, a baseline number, a visualization. Don't try to run the full experiment.
+- High direction + high velocity (later cycles) → cycles can be more ambitious: full training runs, ablation studies, sweeps. You know what you're doing and you're moving fast.
 
 ## Code & Experiments
 
