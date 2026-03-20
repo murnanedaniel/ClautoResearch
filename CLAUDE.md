@@ -26,6 +26,8 @@ Research proceeds in cycles. Each cycle is one "week" with two halves and two ch
 
 **IMPORTANT: Scope the proposed study and next steps to THIS Wed-Sun only, not the whole project.** The project plan (`plan.md`) describes the full arc. The Wednesday slides propose what to do *this week*. A good Wed-Sun plan ends with ONE concrete deliverable — a working data loader, a baseline AUC number, a single trained model. Not "build the full pipeline and generate the final plot." If the full experiment would take multiple cycles, propose only the first step.
 
+**Be visual.** A picture is worth a thousand words. Every check-in deck should include multiple plots, tables, and visualizations — data distributions, feature comparisons, heatmaps, architecture diagrams, training curves, result tables. Generate plots during exploration and save them to `cycles/cycle_NN/results/` for inclusion via `\includegraphics`. Never present findings as bullet points when a figure would be clearer.
+
 **Stop. Wait for supervisor approval before proceeding to the second half.**
 
 ### Second half (Wed → Fri): Build & Run
