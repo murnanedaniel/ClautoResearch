@@ -18,6 +18,7 @@ The user wants to create a new research project. Do the following:
    ├── CLAUDE.md
    ├── state.yaml
    ├── plan.md
+   ├── requirements.txt   ← pinned Python dependencies
    ├── src/               ← persistent reusable code
    │   ├── data/          ← data loading, preprocessing
    │   ├── models/        ← model definitions
@@ -57,6 +58,18 @@ The user wants to create a new research project. Do the following:
    ```
 
 6. **Copy `templates/cycle_notes.md`** to `cycles/cycle_01/notes.md`.
+
+6b. **Create `requirements.txt`** with common scientific Python packages as a starting point:
+   ```
+   numpy
+   pandas
+   matplotlib
+   scikit-learn
+   jupyter
+   ```
+   Ask the supervisor if there are additional dependencies to add (e.g. `torch`, `jax`, domain-specific packages). Pin versions after installing.
+
+6c. **Create the virtual environment**: `python -m venv venv && source venv/bin/activate && pip install -r requirements.txt`. Then update `requirements.txt` with pinned versions: `pip freeze > requirements.txt`.
 
 7. **Start a conversation about the project plan.** Ask the supervisor to describe their vision: the problem space, initial directions, possible outcomes, and any constraints. Distill this into `plan.md` together. This is the north star document — it should capture the research vision at a high level, not a task list.
 

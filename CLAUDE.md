@@ -94,6 +94,18 @@ Propose new values at each Monday check-in. The supervisor may override.
 - Low direction + low velocity (early cycles) → each cycle should produce ONE small thing: a data loader, a baseline number, a visualization. Don't try to run the full experiment.
 - High direction + high velocity (later cycles) → cycles can be more ambitious: full training runs, ablation studies, sweeps. You know what you're doing and you're moving fast.
 
+## Environment
+
+Each project has its own Python virtual environment.
+
+- **Location**: `projects/<name>/venv/` (gitignored)
+- **Dependencies**: `projects/<name>/requirements.txt` (git-tracked)
+- **Set up**: `python -m venv venv && source venv/bin/activate && pip install -r requirements.txt`
+
+When you add a new dependency, add it to `requirements.txt` immediately. Keep the file sorted and pinned (e.g. `torch==2.5.0`, not just `torch`). This ensures reproducibility across sessions and machines.
+
+At the start of each session, check if the venv exists and activate it. If it doesn't exist, create it and install dependencies.
+
 ## Code & Experiments
 
 Each project has two places for code:
