@@ -121,6 +121,21 @@ Each project has two places for code:
 
 **Results**: All outputs (plots, metrics, saved models, logs) go in `cycles/cycle_NN/results/`. Reference these from slide decks with relative paths.
 
+## Running Compute Tasks
+
+**Never run a long task in the foreground and wait.** Any task expected to take more than ~1 minute (training, large data processing, simulations) should be run as a background task.
+
+**Pattern:**
+1. Launch the task in the background (e.g. `run_in_background`)
+2. While it runs, do useful work: write analysis code, update notes, prepare the next step
+3. Check on the task periodically — every few minutes for short tasks, less often for long ones
+4. **Monitor for failure**: look for loss diverging, NaNs, errors, no progress. Kill broken tasks immediately rather than letting them burn compute
+5. When done, collect results and continue
+
+**Scripts should log to files** (not just stdout) so you can check progress from the output file even while the task runs. Write training scripts to log metrics (loss, AUC, etc.) every N steps to a results file.
+
+**If a task will take longer than ~10 minutes**, tell the supervisor and suggest what to do while waiting — or whether to kick it off as a "weekend run" and move to the next task.
+
 ## State Management
 
 - Read the project's `state.yaml` at the start of every session
