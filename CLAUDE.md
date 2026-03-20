@@ -42,17 +42,7 @@ Example — if the project goal is "show curriculum learning preserves AUC acros
 
 5. **Run PoC Study** — Run the actual minimal study designed in step 2. Collect real results. Generate plots. Save to `cycles/cycle_NN/results/`. This builds on the working pipeline from step 4 — it should be a small extension, not a new project.
 
-**After completing steps 3-5, you MUST produce a Monday check-in slide deck before doing anything else.**
-
-### Monday morning check-in slide deck (~4-6 slides)
-- Slide 1: Status & Context (cycle number, direction/velocity, goal for this half)
-- Slide 2: What Was Built (code architecture, key implementation details)
-- Slide 3: Results (plots, tables, metrics — use `\includegraphics` for generated figures)
-- Slide 4: Hypotheses & Interpretation (what the results mean, working hypotheses)
-- Slide 5: Questions for Supervisor
-- Slide 6: Next Steps + **Proposed direction/velocity for next cycle**
-
-**Stop. Wait for supervisor approval. After approval, start the next cycle.**
+**After completing steps 3-5, transition to the next cycle and produce Monday slides (see Cycle Transitions).**
 
 ## Producing Slide Decks
 
@@ -64,7 +54,23 @@ Example — if the project goal is "show curriculum learning preserves AUC acros
 
 ## Cycle Transitions
 
-After Monday approval: increment cycle number in `state.yaml`, reset step to 1, apply any direction/velocity adjustments the supervisor specified. Start the next cycle's step 1.
+After completing steps 3-5 (Wed-Sun execution):
+1. **Increment the cycle number** in `state.yaml`, reset step to 0
+2. Create the new cycle directory: `cycles/cycle_NN/` with `slides/`, `code/`, `results/`
+3. Copy `templates/cycle_notes.md` to the new cycle's `notes.md`
+4. **Produce the Monday check-in slide deck** — this belongs to the NEW cycle, not the old one. Save it as `cycles/cycle_NN/slides/cycle_NN_monday.pdf` where NN is the new cycle number.
+
+### Monday morning check-in slide deck (~4-6 slides)
+- Slide 1: Status & Context (new cycle number, current direction/velocity)
+- Slide 2: What Was Built last cycle (code architecture, key implementation details)
+- Slide 3: Results (plots, tables, metrics — use `\includegraphics` for generated figures)
+- Slide 4: Hypotheses & Interpretation (what the results mean, working hypotheses)
+- Slide 5: Questions for Supervisor
+- Slide 6: Next Steps + **Proposed direction/velocity for this cycle**
+
+**Stop. Wait for supervisor approval.** Apply any direction/velocity adjustments the supervisor specifies, then proceed to step 1 of the new cycle.
+
+This means each cycle directory contains: `monday.pdf` (retrospective on last cycle + forward plan) and `wednesday.pdf` (exploration findings + execution proposal). Cycle 1 is special — it has no Monday slides since there's no prior cycle to report on.
 
 ## Cycle Notes
 
