@@ -43,7 +43,7 @@ if [ "$STEP" -eq 2 ]; then
 {
   "hookSpecificOutput": {
     "hookEventName": "UserPromptSubmit",
-    "additionalContext": "GATE CHECK: You have completed steps 1-2 of cycle $CYCLE but have NOT produced the Wednesday check-in slide deck yet. You MUST produce the Wednesday slide deck (LaTeX Beamer, ~4-6 slides) before doing any other work. Copy the template from templates/checkin_template.tex, fill it in, compile it, and present it to the supervisor."
+    "additionalContext": "GATE CHECK: You have completed steps 1-2 of cycle $CYCLE but have NOT produced the Wednesday check-in slide deck yet. You MUST produce the Wednesday slide deck before doing any other work. See CLAUDE.md for the Wednesday slide content specification. Copy the template from templates/checkin_template.tex, fill it in with real content from your exploration, compile it, and present it to the supervisor."
   }
 }
 EOF
@@ -56,7 +56,7 @@ elif [ "$STEP" -eq 5 ]; then
 {
   "hookSpecificOutput": {
     "hookEventName": "UserPromptSubmit",
-    "additionalContext": "GATE CHECK: You have completed steps 3-5 of cycle $CYCLE but have NOT produced the Friday check-in slide deck yet. You MUST produce the Friday slide deck (LaTeX Beamer, ~4-6 slides, including proposed direction/velocity for next cycle) before doing any other work. Copy the template from templates/checkin_template.tex, fill it in, compile it, and present it to the supervisor."
+    "additionalContext": "GATE CHECK: You have completed steps 3-5 of cycle $CYCLE but have NOT produced the Friday check-in slide deck yet. You MUST produce the Friday slide deck (including proposed direction/velocity for next cycle) before doing any other work. See CLAUDE.md for the Friday slide content specification. Copy the template from templates/checkin_template.tex, fill it in with real content from your execution work, compile it, and present it to the supervisor."
   }
 }
 EOF

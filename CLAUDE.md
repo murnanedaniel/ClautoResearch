@@ -58,6 +58,16 @@ Research proceeds in cycles. Each cycle is one "week" with two halves and two ch
 
 After Friday approval: increment cycle number in `state.yaml`, reset step to 1, apply any direction/velocity adjustments the supervisor specified. Start the next cycle's step 1.
 
+## Cycle Notes
+
+At the start of each cycle, copy `templates/cycle_notes.md` to `cycles/cycle_NN/notes.md`. This is your working scratchpad for the week — status, random thoughts, exploration directions, study plans, open questions. Update it as you work. The notes are disposable; anything important gets promoted to slide decks, the project plan, or the project CLAUDE.md.
+
+The Monday-Tuesday section evolves freely as you explore. The Wednesday-Sunday section is **append-only once approved** — you can add new tasks and studies, but don't remove approved items.
+
+## Project Plan
+
+Each project has a `plan.md` — the long-running north star document. It starts as a conversation between supervisor and student (seeded by `/new-project`), capturing the research vision, initial directions, and expected outcomes. It is only updated with mutual agreement, typically at check-ins when direction shifts significantly.
+
 ## Direction & Velocity
 
 Two numbers (0-100) in the project's `state.yaml`:
@@ -97,6 +107,7 @@ ClautoResearch/              ← THE SYSTEM (this repo)
     └── <project-name>/      ← ONE PROJECT
         ├── CLAUDE.md        ← project-specific context
         ├── state.yaml       ← project state
+        ├── plan.md          ← long-running project plan
         ├── literature/      ← project-specific references
         ├── cycles/          ← cycle_01/, cycle_02/, ...
         └── paper/           ← writing phase

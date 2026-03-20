@@ -17,6 +17,7 @@ The user wants to create a new research project. Do the following:
    projects/<name>/
    ├── CLAUDE.md
    ├── state.yaml
+   ├── plan.md
    ├── literature/
    ├── cycles/
    │   └── cycle_01/
@@ -51,4 +52,8 @@ The user wants to create a new research project. Do the following:
    notes: "Project created. Awaiting first cycle."
    ```
 
-6. **Confirm** to the user: show the created structure and suggest they start with `/rd-cycle` to begin cycle 1.
+6. **Copy `templates/cycle_notes.md`** to `cycles/cycle_01/notes.md`.
+
+7. **Start a conversation about the project plan.** Ask the supervisor to describe their vision: the problem space, initial directions, possible outcomes, and any constraints. Distill this into `plan.md` together. This is the north star document — it should capture the research vision at a high level, not a task list.
+
+8. **Confirm** to the user: show the created structure and explain that the project is ready to begin cycle 1 (start exploring and working through the cycle naturally).

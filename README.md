@@ -9,16 +9,21 @@ You give Claude a research topic. Claude works in **R&D cycles**, checking in wi
 Each cycle:
 
 ```
-Mon → Wed                          Wed → Fri
-─────────────────────────          ─────────────────────────
-1. Explore literature              3. Set up environment
-2. Design minimal study            4. Get something working
-        │                          5. Run proof-of-concept
-        ▼                                  │
-  Wednesday slides                         ▼
-  (supervisor reviews)              Friday slides
-                                   (supervisor reviews,
-                                    sets direction/velocity)
+Mon morning: Check-in slides
+  Present results from last Wed→Sun
+  Discuss plan for Mon-Tue exploration
+
+Mon → Tue: Exploration
+  Literature, prototyping, thinking
+  Student has autonomy
+
+Wed morning: Check-in slides
+  Present Mon-Tue findings
+  Sign off on Wed→Sun execution plan
+
+Wed → Sun: Execution
+  Build, run experiments, collect results
+  Approved plan is append-only
 ```
 
 **Direction** (0-100): How defined is the research question? Start broad, narrow over time.
@@ -41,7 +46,7 @@ Then in Claude Code:
 /new-project "Your research topic here"
 ```
 
-This scaffolds a project under `projects/`. From there, just talk to Claude — it reads the system instructions from `CLAUDE.md`, picks up project state from `state.yaml`, and knows what to do. It will work through the R&D cycle steps and automatically produce slide decks at each gate for your review.
+This scaffolds a project under `projects/` and starts a conversation about the project plan. From there, just talk to Claude — it reads the system instructions from `CLAUDE.md`, picks up project state from `state.yaml`, and knows what to do. It will work through the R&D cycle steps and automatically produce slide decks at each gate for your review.
 
 Two explicit commands:
 - `/new-project "topic"` — scaffold a new research project
@@ -64,15 +69,18 @@ ClautoResearch/
 │   │   └── enforce_checkin.sh   #   Ensures slides are produced at gate points
 │   └── settings.json            #   Hook configuration
 ├── templates/
-│   └── checkin_template.tex     # Beamer slide deck template
+│   ├── checkin_template.tex     # Beamer slide deck template
+│   └── cycle_notes.md           # Cycle notes/scratchpad template
 ├── literature/                  # System-level literature reviews
 └── projects/                    # Your research projects live here
     └── <project-name>/
         ├── CLAUDE.md            # Project-specific context
         ├── state.yaml           # Current cycle/step/direction/velocity
+        ├── plan.md              # Long-running project plan (north star)
         ├── literature/          # Project-specific references
         ├── cycles/              # cycle_01/, cycle_02/, ...
         │   └── cycle_NN/
+        │       ├── notes.md     # Cycle scratchpad (from template)
         │       ├── slides/      # Check-in PDFs
         │       ├── code/        # Experiment code
         │       └── results/     # Outputs and plots
