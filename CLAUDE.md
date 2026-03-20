@@ -82,6 +82,21 @@ Propose new values at each Friday check-in. The supervisor may override.
 - Low velocity → be thorough, read more, think more, prototype carefully
 - High velocity → move fast, minimal deliberation, ship experiments
 
+## Code & Experiments
+
+Each project has two places for code:
+
+- **`src/`** — Persistent, reusable code that accumulates across cycles: data loading, model definitions, training utilities, shared helpers. This is the project's codebase.
+- **`cycles/cycle_NN/code/`** — This cycle's experiments. Notebooks, one-off scripts, quick explorations. Disposable by default.
+
+**Promotion rule**: When code in a cycle proves useful beyond that cycle, move it to `src/`. Don't copy-paste between cycles — refactor into `src/` and import.
+
+**Notebooks vs. scripts** — follow the direction/velocity:
+- Low direction/velocity (early cycles) → Jupyter notebooks. Exploratory, visual, iterative. Good for understanding data, trying ideas, generating plots.
+- High direction/velocity (later cycles) → Python scripts. Reproducible, batchable, can run as background jobs. Good for training runs, sweeps, final experiments.
+
+**Results**: All outputs (plots, metrics, saved models, logs) go in `cycles/cycle_NN/results/`. Reference these from slide decks with relative paths.
+
 ## State Management
 
 - Read the project's `state.yaml` at the start of every session
@@ -108,6 +123,7 @@ ClautoResearch/              ← THE SYSTEM (this repo)
         ├── CLAUDE.md        ← project-specific context
         ├── state.yaml       ← project state
         ├── plan.md          ← long-running project plan
+        ├── src/             ← persistent reusable code (data, models, utils)
         ├── literature/      ← project-specific references
         ├── cycles/          ← cycle_01/, cycle_02/, ...
         └── paper/           ← writing phase

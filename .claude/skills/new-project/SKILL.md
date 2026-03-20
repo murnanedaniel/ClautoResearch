@@ -18,12 +18,16 @@ The user wants to create a new research project. Do the following:
    ├── CLAUDE.md
    ├── state.yaml
    ├── plan.md
+   ├── src/               ← persistent reusable code
+   │   ├── data/          ← data loading, preprocessing
+   │   ├── models/        ← model definitions
+   │   └── utils/         ← shared utilities
    ├── literature/
    ├── cycles/
    │   └── cycle_01/
    │       ├── slides/
-   │       ├── code/
-   │       └── results/
+   │       ├── code/      ← this cycle's experiments (notebooks, scripts)
+   │       └── results/   ← outputs, plots, metrics
    └── paper/
    ```
 

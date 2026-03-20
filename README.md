@@ -79,13 +79,17 @@ ClautoResearch/
         ├── CLAUDE.md            # Project-specific context
         ├── state.yaml           # Current cycle/step/direction/velocity
         ├── plan.md              # Long-running project plan (north star)
+        ├── src/                 # Persistent code (promoted from cycles)
+        │   ├── data/            # Data loading, preprocessing
+        │   ├── models/          # Model definitions
+        │   └── utils/           # Shared utilities
         ├── literature/          # Project-specific references
         ├── cycles/              # cycle_01/, cycle_02/, ...
         │   └── cycle_NN/
         │       ├── notes.md     # Cycle scratchpad (from template)
         │       ├── slides/      # Check-in PDFs
-        │       ├── code/        # Experiment code
-        │       └── results/     # Outputs and plots
+        │       ├── code/        # Experiments (notebooks early, scripts later)
+        │       └── results/     # Outputs, plots, metrics
         └── paper/               # Paper drafts (writing phase)
 ```
 
