@@ -56,7 +56,7 @@ Two explicit commands:
 
 Everything else (literature search, experiment design, coding, running studies, producing check-in slides) happens naturally as Claude follows the workflow.
 
-A **hook** enforces check-in discipline: if Claude is past a gate point without having produced slides, it gets a reminder injected into its context before it can do anything else. The student always shows up with a deck.
+**Hooks** enforce the workflow: a **check-in hook** ensures slides are produced at gate points, and a **stop hook** keeps Claude working autonomously through entire phases — it can only stop when slides are ready for your review. The student always shows up with a deck, and never pauses to ask "shall I continue?"
 
 ## Project Structure
 
