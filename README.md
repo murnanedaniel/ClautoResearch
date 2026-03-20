@@ -33,9 +33,12 @@ When results are ready, a separate **writing phase** drafts the paper — and ca
 
 ## Try It
 
+**CLI:**
 ```bash
 git clone git@github.com:murnanedaniel/ClautoResearch.git && cd ClautoResearch && claude --dangerously-skip-permissions
 ```
+
+**VS Code:** Clone the repo, open it in VS Code with the [Claude Code extension](https://marketplace.visualstudio.com/items?itemName=anthropic.claude-code), and open the Claude panel.
 
 Then type: `/new-project "Your research topic"`
 
