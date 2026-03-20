@@ -34,7 +34,7 @@ When results are ready, a separate **writing phase** drafts the paper — and ca
 ## Try It
 
 ```bash
-git clone git@github.com:murnanedaniel/ClautoResearch.git && cd ClautoResearch && claude
+git clone git@github.com:murnanedaniel/ClautoResearch.git && cd ClautoResearch && claude --dangerously-skip-permissions
 ```
 
 Then type: `/new-project "Your research topic"`
