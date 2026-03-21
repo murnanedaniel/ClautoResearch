@@ -126,8 +126,9 @@ The user wants to create a new research project. Do the following:
    step: 0
    direction: 0
    velocity: 0
+   mode: meeting
    last_checkin: null
-   notes: "Project created. Awaiting first cycle."
+   notes: "Project created. In pre-project planning meeting."
    ```
 
 7. **Copy `templates/cycle_notes.md`** to `cycles/cycle_01/notes.md`.

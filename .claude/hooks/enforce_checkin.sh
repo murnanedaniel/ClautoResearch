@@ -48,16 +48,26 @@ fi
 # In meeting mode: inject meeting behavior, skip normal gates
 if [ "$MODE" = "meeting" ]; then
     # Determine which meeting this is
-    if [ "$STEP" -eq 0 ] && [ "$CYCLE" -gt 1 ]; then
+    if [ "$STEP" -eq 0 ] && [ "$CYCLE" -eq 1 ]; then
+        MEETING_TYPE="Planning"
+    elif [ "$STEP" -eq 0 ] && [ "$CYCLE" -gt 1 ]; then
         MEETING_TYPE="Monday"
     else
         MEETING_TYPE="Wednesday"
     fi
+
+    # Planning meetings have different context than check-in meetings
+    if [ "$MEETING_TYPE" = "Planning" ]; then
+        MEETING_CONTEXT="MEETING MODE (Pre-project planning): You are in an interactive planning meeting with the supervisor. This is the initial scoping conversation for the project. Be conversational and collaborative — discuss the research vision, ask clarifying questions, help refine scope.\n\nFocus on:\n  - Understanding the problem space and research question\n  - Discussing what success looks like and what's in/out of scope\n  - Agreeing on initial direction/velocity\n  - Iterating on plan.md together\n  - Identifying initial literature directions for cycle 1 exploration\n\nDo NOT: start exploration, write code, search literature, or do any autonomous work. This is a conversation, not a work session.\n\nWRAP-UP PROTOCOL: When you sense the meeting is concluding — the project scope is clear, plan.md captures the vision, and the supervisor is satisfied with the starting direction — use AskUserQuestion to propose wrapping up. But ONLY when ALL of these are true:\n  - The research question or problem space is reasonably defined\n  - plan.md has been drafted or updated with mutual agreement\n  - Initial direction for cycle 1 exploration has been discussed\n  - The supervisor signals satisfaction ('looks good', 'let's get started', 'that's a good plan', etc.)\n\nDo NOT propose wrapping up if:\n  - The supervisor is still describing the problem or refining scope\n  - There are open questions about what the project should focus on\n  - plan.md hasn't been discussed or is clearly incomplete\n\nWhen proposing wrap-up, use AskUserQuestion with options: 'Approve & proceed' (finalize plan.md, begin cycle 1 exploration), 'Continue discussion' (stay in meeting), 'Revise plan' (update plan.md before approving).\n\nIf approved: finalize plan.md, record any decisions in cycle_01/notes.md, set mode to 'working' in state.yaml, advance step to 1, and begin autonomous exploration (literature review, research question refinement, toward producing Wednesday slides)."
+    else
+        MEETING_CONTEXT="MEETING MODE ($MEETING_TYPE check-in, cycle $CYCLE): You are in an interactive meeting with the supervisor. Be conversational and responsive — answer questions, generate ad-hoc plots, explain results, discuss alternatives. You may run quick analysis code and generate visualizations if the supervisor asks.\n\nDo NOT: start autonomous execution work, write production code, begin the next phase, or update state.yaml step.\n\nWRAP-UP PROTOCOL: When you sense the meeting is concluding — the supervisor has reviewed all slides, questions have been discussed, and next steps are clear — use AskUserQuestion to propose wrapping up. But ONLY when ALL of these are true:\n  - The supervisor's questions (slide 5) have been addressed\n  - Next steps / direction have been discussed\n  - The supervisor signals satisfaction ('looks good', 'let's do that', 'go ahead', 'approved', etc.)\n\nDo NOT propose wrapping up if:\n  - The supervisor is actively asking questions or exploring data\n  - You are mid-discussion of a slide or result\n  - The supervisor just asked you to generate a plot or analysis\n  - There are unresolved questions or open threads\n\nWhen proposing wrap-up, use AskUserQuestion with options: 'Approve & proceed' (begin next phase), 'Continue discussion' (stay in meeting), 'Revise plan' (update slides/plan before approving).\n\nIf approved: record meeting outcomes in notes.md, set mode back to 'working' in state.yaml, advance the step, and resume autonomous work."
+    fi
+
     cat <<EOF
 {
   "hookSpecificOutput": {
     "hookEventName": "UserPromptSubmit",
-    "additionalContext": "MEETING MODE ($MEETING_TYPE check-in, cycle $CYCLE): You are in an interactive meeting with the supervisor. Be conversational and responsive — answer questions, generate ad-hoc plots, explain results, discuss alternatives. You may run quick analysis code and generate visualizations if the supervisor asks.\n\nDo NOT: start autonomous execution work, write production code, begin the next phase, or update state.yaml step.\n\nWRAP-UP PROTOCOL: When you sense the meeting is concluding — the supervisor has reviewed all slides, questions have been discussed, and next steps are clear — use AskUserQuestion to propose wrapping up. But ONLY when ALL of these are true:\n  - The supervisor's questions (slide 5) have been addressed\n  - Next steps / direction have been discussed\n  - The supervisor signals satisfaction ('looks good', 'let's do that', 'go ahead', 'approved', etc.)\n\nDo NOT propose wrapping up if:\n  - The supervisor is actively asking questions or exploring data\n  - You are mid-discussion of a slide or result\n  - The supervisor just asked you to generate a plot or analysis\n  - There are unresolved questions or open threads\n\nWhen proposing wrap-up, use AskUserQuestion with options: 'Approve & proceed' (begin next phase), 'Continue discussion' (stay in meeting), 'Revise plan' (update slides/plan before approving).\n\nIf approved: record meeting outcomes in notes.md, set mode back to 'working' in state.yaml, advance the step, and resume autonomous work."
+    "additionalContext": "$MEETING_CONTEXT"
   }
 }
 EOF
