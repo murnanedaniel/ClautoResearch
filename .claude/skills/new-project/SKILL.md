@@ -156,4 +156,4 @@ The user wants to create a new research project. Do the following:
 
 10. **Start a conversation about the project plan.** Ask the supervisor to describe their vision: the problem space, initial directions, possible outcomes, and any constraints. Distill this into `plan.md` together. This is the north star document — it should capture the research vision at a high level, not a task list.
 
-11. **Confirm** to the user: show the created structure, the selected preferences, and explain that the project is ready to begin cycle 1 (start exploring and working through the cycle naturally).
+11. **Confirm** to the user: show the created structure, the selected preferences, and explain that we are now in the **planning meeting** (Phase 1 of onboarding). The conversation should focus on defining the research vision, problem space, initial directions, and drafting `plan.md` together. Once the plan is approved, the student will proceed to Phase 2: a deep, autonomous literature review before the first Monday check-in.

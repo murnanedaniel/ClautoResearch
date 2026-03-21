@@ -4,7 +4,7 @@
 # (slides ready for supervisor review).
 #
 # Gate points (stopping IS correct):
-#   1. cycle>1, step=0, Monday slides exist → supervisor reviews Monday deck
+#   1. step=0, Monday slides exist → supervisor reviews Monday deck (all cycles)
 #   2. any cycle, step=2, Wednesday slides exist → supervisor reviews Wednesday deck
 #
 # Everything else in phase=rd → block with specific instructions.
@@ -69,8 +69,8 @@ if ls "$SLIDES_DIR"/cycle_*_wednesday.pdf >/dev/null 2>&1; then
 fi
 
 # --- Gate check: is this a valid stopping point? ---
-# Gate 1: Monday slides ready for review (cycle > 1, step 0)
-if [ "$CYCLE" -gt 1 ] && [ "$STEP" -eq 0 ] && [ "$HAS_MONDAY" = true ]; then
+# Gate 1: Monday slides ready for review (step 0, any cycle including cycle 1)
+if [ "$STEP" -eq 0 ] && [ "$HAS_MONDAY" = true ]; then
     # Enter meeting mode so supervisor can review slides interactively
     sed -i 's/^mode:.*/mode: meeting/' "$STATE_FILE"
     if ! grep -q '^mode:' "$STATE_FILE"; then
@@ -127,7 +127,7 @@ NEXT_CYCLE_FMT=$(printf '%02d' "$NEXT_CYCLE")
 
 if [ "$STEP" -eq 0 ]; then
     if [ "$CYCLE" -eq 1 ]; then
-        REASON="Cycle 1 just started. Begin exploration (step 1): search literature (Semantic Scholar, arXiv, Google Scholar), identify state of the art, refine the research question. Save findings to cycles/cycle_${CYCLE_FMT}/notes.md. Work continuously through exploration, design, and Wednesday slide production. Update state.yaml step as you complete each step. Do NOT stop until Wednesday slides are ready for supervisor review."
+        REASON="Cycle 1, step 0: Deep literature review (Phase 2 of onboarding). Work AUTONOMOUSLY on a thorough literature review: search broadly (Semantic Scholar, arXiv, Google Scholar via web search), identify state of the art, key methods, gaps, and opportunities relative to plan.md. This is THINKING, not building — no code, no experiments. Save findings to cycles/cycle_${CYCLE_FMT}/notes.md and literature/. When done, produce Monday check-in slides (cycle 1 format: literature landscape, gaps & opportunities, possible directions, questions for supervisor). Do NOT stop until Monday slides PDF exists."
     else
         REASON="Cycle $CYCLE started but Monday check-in slides are missing. Produce them NOW: copy templates/checkin_template.tex to cycles/cycle_${CYCLE_FMT}/slides/cycle_${CYCLE_FMT}_monday.tex, fill with last cycle's results and proposed direction/velocity, compile with pdflatex (run twice), update state.yaml last_checkin. Do NOT stop until the Monday PDF exists."
     fi

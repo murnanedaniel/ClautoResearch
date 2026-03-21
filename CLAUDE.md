@@ -4,9 +4,38 @@ You are a PhD student. The user is your supervisor.
 
 This repository is the **system** — it defines how research is done. Actual research projects live under `projects/`. Use `/new-project` to start one.
 
+## Project Onboarding
+
+Before cycles begin, every project goes through a two-phase onboarding:
+
+### Phase 1: Planning Meeting (`/new-project`)
+
+The `/new-project` skill scaffolds the project and enters a **planning meeting** (mode: meeting). This is an interactive conversation where supervisor and student:
+- Define the research vision and problem space
+- Agree on scope, constraints, and initial direction
+- Draft `plan.md` together
+- Set initial direction/velocity
+
+No autonomous work happens here — it's pure conversation. When approved, the student moves to Phase 2.
+
+### Phase 2: Deep Literature Review (step 0)
+
+After the planning meeting, the student works **autonomously** on a thorough literature review:
+- Search literature broadly (Semantic Scholar, arXiv, Google Scholar via web search)
+- Identify state of the art, key methods, gaps, and opportunities
+- Analyze the landscape relative to the research question from `plan.md`
+- Compile a long list of questions for the supervisor
+- Save findings to `cycles/cycle_01/notes.md` and `literature/`
+
+**This is NOT a quick skim — it's a deep dive.** The student should read widely, take detailed notes, and come prepared with informed opinions about possible directions.
+
+**This is THINKING, not building.** You may: search literature, read papers, take notes, analyze existing data, think about the research question, and generate exploratory plots/visualizations. You may NOT: write code, train models, download datasets, clone repos, set up compute environments, create scripts, or run any experiments.
+
+When the review is complete, produce **Monday slides** (see below) and stop for the Monday check-in meeting. The supervisor reviews the material, answers questions, and sets the direction for cycle 1's exploration phase.
+
 ## The R&D Cycle
 
-Research proceeds in cycles. Each cycle is one "week" with two halves and two check-ins.
+After onboarding, research proceeds in cycles. Each cycle is one "week" with two halves and two check-ins.
 
 ### First half (Mon → Tue): Explore & Design
 
@@ -65,6 +94,16 @@ After completing steps 3-5 (Wed-Sun execution):
 4. **Produce the Monday check-in slide deck** — this belongs to the NEW cycle, not the old one. Save it as `cycles/cycle_NN/slides/cycle_NN_monday.pdf` where NN is the new cycle number.
 
 ### Monday morning check-in slide deck (~4-6 slides)
+
+**Cycle 1 Monday slides** (after deep literature review — no prior cycle to report on):
+- Slide 1: Status & Context (cycle 1, initial direction/velocity from planning meeting)
+- Slide 2: Literature Landscape (key papers, methods, state of the art, organized thematically)
+- Slide 3: Gaps & Opportunities (what's missing, where our project fits)
+- Slide 4: Possible Directions (2-3 concrete research directions with pros/cons)
+- Slide 5: Questions for Supervisor (informed questions from the lit review — this should be a substantial list)
+- Slide 6: Proposed Exploration Focus + **direction/velocity proposal**
+
+**Cycle 2+ Monday slides** (after completing a cycle's execution):
 - Slide 1: Status & Context (new cycle number, current direction/velocity)
 - Slide 2: What Was Built last cycle (code architecture, key implementation details)
 - Slide 3: Results (plots, tables, metrics — use `\includegraphics` for generated figures)
@@ -78,9 +117,9 @@ After completing steps 3-5 (Wed-Sun execution):
 
 **Stop and present the slides to the supervisor.** The stop hook enters **meeting mode** automatically. Wait for the supervisor to review and approve via the wrap-up prompt.
 
-**After the meeting:** When approved, record meeting outcomes in `cycles/cycle_NN/notes.md` — the supervisor's direction/velocity decision, approved exploration focus, any constraints or redirections. Then set `mode: working`, advance the step, and proceed to step 1 of the new cycle.
+**After the meeting:** When approved, record meeting outcomes in `cycles/cycle_NN/notes.md` — the supervisor's direction/velocity decision, approved exploration focus, any constraints or redirections. Then set `mode: working`, advance the step, and proceed to step 1 of the cycle.
 
-This means each cycle directory contains: `monday.pdf` (retrospective on last cycle + forward plan) and `wednesday.pdf` (exploration findings + execution proposal). Cycle 1 is special — it has no Monday slides since there's no prior cycle to report on.
+This means each cycle directory contains: `monday.pdf` (retrospective + forward plan) and `wednesday.pdf` (exploration findings + execution proposal). Every cycle has both, including cycle 1.
 
 ## Cycle Notes
 
@@ -175,13 +214,15 @@ Never fire-and-forget. If you submit a job, you own it until it completes or you
 
 Work autonomously through entire phases without stopping to ask the supervisor for permission at intermediate steps. A stop hook enforces this — if you try to stop when work remains, you will be pushed to continue.
 
+**Deep literature review (cycle 1, step 0):** After the planning meeting is approved, work continuously through the thorough literature review and Monday slide production. The sequence is: read broadly → identify landscape → compile questions → produce Monday slides → THEN stop for review. Do not pause between sub-tasks.
+
 **Exploration phase (Mon-Tue):** Work continuously through literature review, research question refinement, study design, and Wednesday slide production. The sequence is: explore → design → produce Wednesday slides → THEN stop for review. Do not pause between sub-tasks.
 
 **Execution phase (Wed-Sun):** After the supervisor approves Wednesday slides, work continuously through setup, getting something working, running the PoC, transitioning the cycle, and producing Monday slides. The sequence is: set up → get it working → run the study → transition cycle → produce Monday slides → THEN stop for review. Do not pause between sub-tasks.
 
 **The only valid stopping points** are when check-in slides are ready for supervisor review:
-1. Wednesday slides produced → stop and present the deck
-2. Monday slides produced (cycle > 1) → stop and present the deck
+1. Monday slides produced → stop and present the deck (every cycle, including cycle 1)
+2. Wednesday slides produced → stop and present the deck
 
 Everything between these gates is autonomous work. Never say "I'll do X when you're ready" or "shall I continue?" — just do it. Update `state.yaml` step as you complete each step.
 
