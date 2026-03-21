@@ -37,9 +37,30 @@ fi
 STEP=$(grep '^step:' "$STATE_FILE" | awk '{print $2}')
 CYCLE=$(grep '^cycle:' "$STATE_FILE" | awk '{print $2}')
 PHASE=$(grep '^phase:' "$STATE_FILE" | awk '{print $2}')
+MODE=$(grep '^mode:' "$STATE_FILE" | awk '{print $2}')
+MODE="${MODE:-working}"
 
 # Only enforce during R&D phase
 if [ "$PHASE" != "rd" ]; then
+    exit 0
+fi
+
+# In meeting mode: inject meeting behavior, skip normal gates
+if [ "$MODE" = "meeting" ]; then
+    # Determine which meeting this is
+    if [ "$STEP" -eq 0 ] && [ "$CYCLE" -gt 1 ]; then
+        MEETING_TYPE="Monday"
+    else
+        MEETING_TYPE="Wednesday"
+    fi
+    cat <<EOF
+{
+  "hookSpecificOutput": {
+    "hookEventName": "UserPromptSubmit",
+    "additionalContext": "MEETING MODE ($MEETING_TYPE check-in, cycle $CYCLE): You are in an interactive meeting with the supervisor. Be conversational and responsive — answer questions, generate ad-hoc plots, explain results, discuss alternatives. You may run quick analysis code and generate visualizations if the supervisor asks.\n\nDo NOT: start autonomous execution work, write production code, begin the next phase, or update state.yaml step.\n\nWRAP-UP PROTOCOL: When you sense the meeting is concluding — the supervisor has reviewed all slides, questions have been discussed, and next steps are clear — use AskUserQuestion to propose wrapping up. But ONLY when ALL of these are true:\n  - The supervisor's questions (slide 5) have been addressed\n  - Next steps / direction have been discussed\n  - The supervisor signals satisfaction ('looks good', 'let's do that', 'go ahead', 'approved', etc.)\n\nDo NOT propose wrapping up if:\n  - The supervisor is actively asking questions or exploring data\n  - You are mid-discussion of a slide or result\n  - The supervisor just asked you to generate a plot or analysis\n  - There are unresolved questions or open threads\n\nWhen proposing wrap-up, use AskUserQuestion with options: 'Approve & proceed' (begin next phase), 'Continue discussion' (stay in meeting), 'Revise plan' (update slides/plan before approving).\n\nIf approved: record meeting outcomes in notes.md, set mode back to 'working' in state.yaml, advance the step, and resume autonomous work."
+  }
+}
+EOF
     exit 0
 fi
 

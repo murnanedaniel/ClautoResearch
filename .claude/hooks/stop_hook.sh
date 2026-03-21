@@ -40,9 +40,17 @@ fi
 STEP=$(grep '^step:' "$STATE_FILE" | awk '{print $2}')
 CYCLE=$(grep '^cycle:' "$STATE_FILE" | awk '{print $2}')
 PHASE=$(grep '^phase:' "$STATE_FILE" | awk '{print $2}')
+MODE=$(grep '^mode:' "$STATE_FILE" | awk '{print $2}')
+MODE="${MODE:-working}"
 
 # Only enforce during R&D phase
 if [ "$PHASE" != "rd" ]; then
+    exit 0
+fi
+
+# In meeting mode, always allow stop (student should be conversational)
+if [ "$MODE" = "meeting" ]; then
+    rm -f "/tmp/clauto_stop_count_${SESSION_ID}"
     exit 0
 fi
 
@@ -63,12 +71,22 @@ fi
 # --- Gate check: is this a valid stopping point? ---
 # Gate 1: Monday slides ready for review (cycle > 1, step 0)
 if [ "$CYCLE" -gt 1 ] && [ "$STEP" -eq 0 ] && [ "$HAS_MONDAY" = true ]; then
+    # Enter meeting mode so supervisor can review slides interactively
+    sed -i 's/^mode:.*/mode: meeting/' "$STATE_FILE"
+    if ! grep -q '^mode:' "$STATE_FILE"; then
+        echo "mode: meeting" >> "$STATE_FILE"
+    fi
     rm -f "/tmp/clauto_stop_count_${SESSION_ID}"
     exit 0
 fi
 
 # Gate 2: Wednesday slides ready for review (step 2, slides exist)
 if [ "$STEP" -eq 2 ] && [ "$HAS_WEDNESDAY" = true ]; then
+    # Enter meeting mode so supervisor can review slides interactively
+    sed -i 's/^mode:.*/mode: meeting/' "$STATE_FILE"
+    if ! grep -q '^mode:' "$STATE_FILE"; then
+        echo "mode: meeting" >> "$STATE_FILE"
+    fi
     rm -f "/tmp/clauto_stop_count_${SESSION_ID}"
     exit 0
 fi
