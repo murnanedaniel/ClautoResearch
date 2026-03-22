@@ -71,24 +71,66 @@ fi
 # --- Gate check: is this a valid stopping point? ---
 # Gate 1: Monday slides ready for review (step 0, any cycle including cycle 1)
 if [ "$STEP" -eq 0 ] && [ "$HAS_MONDAY" = true ]; then
-    # Enter meeting mode so supervisor can review slides interactively
-    sed -i 's/^mode:.*/mode: meeting/' "$STATE_FILE"
-    if ! grep -q '^mode:' "$STATE_FILE"; then
-        echo "mode: meeting" >> "$STATE_FILE"
+    if [ "$MODE" = "meeting" ]; then
+        # Postdoc approved, supervisor meeting — allow stop
+        rm -f "/tmp/clauto_stop_count_${SESSION_ID}"
+        exit 0
+    elif [ "$MODE" = "postdoc_review" ]; then
+        # Postdoc review in progress — block
+        cat <<HOOK_EOF
+{
+  "decision": "block",
+  "reason": "POSTDOC REVIEW IN PROGRESS: Continue the review conversation with the postdoc subagent. Answer questions, provide requested data/plots. When the postdoc returns APPROVED: record feedback in cycle notes under '## Postdoc Review', set mode to 'meeting' in state.yaml, then stop. If REVISIONS_REQUIRED: make changes, recompile slides, spawn a new postdoc review."
+}
+HOOK_EOF
+        exit 0
+    else
+        # First arrival at gate — enter postdoc review
+        sed -i 's/^mode:.*/mode: postdoc_review/' "$STATE_FILE"
+        if ! grep -q '^mode:' "$STATE_FILE"; then
+            echo "mode: postdoc_review" >> "$STATE_FILE"
+        fi
+        CYCLE_FMT=$(printf '%02d' "$CYCLE")
+        cat <<HOOK_EOF
+{
+  "decision": "block",
+  "reason": "MONDAY SLIDES READY — POSTDOC REVIEW REQUIRED: Spawn a postdoc subagent using the Agent tool. Read templates/postdoc_prompt.md for the full system prompt. Provide artifact paths in your Agent prompt: slide PDF=${SLIDES_DIR}/cycle_${CYCLE_FMT}_monday.pdf, notes=${CYCLE_DIR}/notes.md, results=${CYCLE_DIR}/results/, code=${CYCLE_DIR}/code/, plan=${PROJECT_DIR}/plan.md, project=${PROJECT_DIR}. Drive the conversation faithfully — relay ALL postdoc requests, provide raw data not summaries. You must NEVER read .postdoc/ files."
+}
+HOOK_EOF
+        exit 0
     fi
-    rm -f "/tmp/clauto_stop_count_${SESSION_ID}"
-    exit 0
 fi
 
 # Gate 2: Wednesday slides ready for review (step 2, slides exist)
 if [ "$STEP" -eq 2 ] && [ "$HAS_WEDNESDAY" = true ]; then
-    # Enter meeting mode so supervisor can review slides interactively
-    sed -i 's/^mode:.*/mode: meeting/' "$STATE_FILE"
-    if ! grep -q '^mode:' "$STATE_FILE"; then
-        echo "mode: meeting" >> "$STATE_FILE"
+    if [ "$MODE" = "meeting" ]; then
+        # Postdoc approved, supervisor meeting — allow stop
+        rm -f "/tmp/clauto_stop_count_${SESSION_ID}"
+        exit 0
+    elif [ "$MODE" = "postdoc_review" ]; then
+        # Postdoc review in progress — block
+        cat <<HOOK_EOF
+{
+  "decision": "block",
+  "reason": "POSTDOC REVIEW IN PROGRESS: Continue the review conversation with the postdoc subagent. Answer questions, provide requested data/plots. When the postdoc returns APPROVED: record feedback in cycle notes under '## Postdoc Review', set mode to 'meeting' in state.yaml, then stop. If REVISIONS_REQUIRED: make changes, recompile slides, spawn a new postdoc review."
+}
+HOOK_EOF
+        exit 0
+    else
+        # First arrival at gate — enter postdoc review
+        sed -i 's/^mode:.*/mode: postdoc_review/' "$STATE_FILE"
+        if ! grep -q '^mode:' "$STATE_FILE"; then
+            echo "mode: postdoc_review" >> "$STATE_FILE"
+        fi
+        CYCLE_FMT=$(printf '%02d' "$CYCLE")
+        cat <<HOOK_EOF
+{
+  "decision": "block",
+  "reason": "WEDNESDAY SLIDES READY — POSTDOC REVIEW REQUIRED: Spawn a postdoc subagent using the Agent tool. Read templates/postdoc_prompt.md for the full system prompt. Provide artifact paths in your Agent prompt: slide PDF=${SLIDES_DIR}/cycle_${CYCLE_FMT}_wednesday.pdf, notes=${CYCLE_DIR}/notes.md, results=${CYCLE_DIR}/results/, code=${CYCLE_DIR}/code/, plan=${PROJECT_DIR}/plan.md, project=${PROJECT_DIR}. Drive the conversation faithfully — relay ALL postdoc requests, provide raw data not summaries. You must NEVER read .postdoc/ files."
+}
+HOOK_EOF
+        exit 0
     fi
-    rm -f "/tmp/clauto_stop_count_${SESSION_ID}"
-    exit 0
 fi
 
 # --- Not at a gate: should block. Check safety valve first. ---
