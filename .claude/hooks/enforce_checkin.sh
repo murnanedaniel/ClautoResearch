@@ -10,6 +10,11 @@
 #   Wed-Sun: build (steps 3-5)
 #   → transition to next cycle → Monday slides → ...
 #
+# Modes:
+#   working: normal autonomous work, enforce gates
+#   postdoc_review: student is conducting a postdoc review, inject context
+#   meeting: PI meeting in progress, inject meeting behavior
+#
 # Gate 1 (Monday): cycle>1 and no monday slides → block everything
 # Gate 2 (Wednesday): no wednesday slides and step>=1 → block execution work
 #   - step>=2: hard gate (exploration done, slides overdue)
@@ -39,13 +44,67 @@ CYCLE=$(grep '^cycle:' "$STATE_FILE" | awk '{print $2}')
 PHASE=$(grep '^phase:' "$STATE_FILE" | awk '{print $2}')
 MODE=$(grep '^mode:' "$STATE_FILE" | awk '{print $2}')
 MODE="${MODE:-working}"
+SUPERVISOR_CADENCE=$(grep '^supervisor_cadence:' "$STATE_FILE" | awk '{print $2}')
+SUPERVISOR_CADENCE="${SUPERVISOR_CADENCE:-4}"
+ESCALATION=$(grep '^escalation:' "$STATE_FILE" | sed 's/^escalation: *//')
+ESCALATION="${ESCALATION:-null}"
 
 # Only enforce during R&D phase
 if [ "$PHASE" != "rd" ]; then
     exit 0
 fi
 
-# In meeting mode: inject meeting behavior, skip normal gates
+# Determine project directory
+PROJECT_DIR=$(dirname "$STATE_FILE")
+CYCLE_DIR="$PROJECT_DIR/cycles/cycle_$(printf '%02d' "$CYCLE")"
+SLIDES_DIR="$CYCLE_DIR/slides"
+
+# Determine if this is a PI meeting cycle
+IS_PI_MEETING=false
+if [ "$CYCLE" -eq 1 ]; then
+    IS_PI_MEETING=true
+elif [ "$ESCALATION" != "null" ] && [ "$ESCALATION" != "" ]; then
+    IS_PI_MEETING=true
+elif [ "$SUPERVISOR_CADENCE" -gt 0 ] && [ $((CYCLE % SUPERVISOR_CADENCE)) -eq 0 ]; then
+    IS_PI_MEETING=true
+fi
+
+# --- Postdoc review mode ---
+if [ "$MODE" = "postdoc_review" ]; then
+    CYCLE_FMT=$(printf '%02d' "$CYCLE")
+
+    # Determine check-in type
+    if [ "$STEP" -eq 0 ]; then
+        CHECKIN_TYPE="monday"
+        SLIDE_PATH="${SLIDES_DIR}/cycle_${CYCLE_FMT}_monday.pdf"
+    else
+        CHECKIN_TYPE="wednesday"
+        SLIDE_PATH="${SLIDES_DIR}/cycle_${CYCLE_FMT}_wednesday.pdf"
+    fi
+
+    DIRECTION=$(grep '^direction:' "$STATE_FILE" | awk '{print $2}')
+    VELOCITY=$(grep '^velocity:' "$STATE_FILE" | awk '{print $2}')
+
+    if [ "$IS_PI_MEETING" = true ] && [ "$STEP" -eq 0 ]; then
+        PI_INFO="This is a PI MEETING CYCLE (cycle $CYCLE). Tell the postdoc this is a PI meeting cycle so they prepare a PI brief in .postdoc/pi_brief.md. After postdoc APPROVED: set mode to 'meeting' and stop for PI review. After ESCALATE: same — set mode to 'meeting' and stop."
+    else
+        PI_INFO="This is a NORMAL CYCLE (postdoc-only). After postdoc APPROVED: record feedback, update direction/velocity per postdoc adjustments, set mode to 'working', advance step, and CONTINUE working. After ESCALATE: set mode to 'meeting' and stop for immediate PI meeting."
+    fi
+
+    POSTDOC_CONTEXT="POSTDOC REVIEW MODE (cycle $CYCLE, ${CHECKIN_TYPE} check-in): You are conducting a postdoc review. If you haven't spawned the postdoc subagent yet, do so NOW using the Agent tool. Read templates/postdoc_prompt.md for the system prompt. Provide these artifacts: slide=${SLIDE_PATH}, notes=${CYCLE_DIR}/notes.md, results=${CYCLE_DIR}/results/, code=${CYCLE_DIR}/code/, plan=${PROJECT_DIR}/plan.md, project=${PROJECT_DIR}, cycle=${CYCLE}, check-in=${CHECKIN_TYPE}, direction=${DIRECTION}, velocity=${VELOCITY}. ${PI_INFO} Drive the conversation faithfully — relay ALL postdoc requests, provide raw data not summaries. You must NEVER read .postdoc/ files."
+
+    cat <<EOF
+{
+  "hookSpecificOutput": {
+    "hookEventName": "UserPromptSubmit",
+    "additionalContext": "$POSTDOC_CONTEXT"
+  }
+}
+EOF
+    exit 0
+fi
+
+# --- Meeting mode (PI meeting) ---
 if [ "$MODE" = "meeting" ]; then
     # Determine which meeting this is
     if [ "$STEP" -eq 0 ] && [ "$CYCLE" -eq 1 ]; then
@@ -56,11 +115,23 @@ if [ "$MODE" = "meeting" ]; then
         MEETING_TYPE="Wednesday"
     fi
 
+    # Check for PI brief to inject
+    PI_BRIEF_SECTION=""
+    PI_BRIEF_FILE="$PROJECT_DIR/.postdoc/pi_brief.md"
+    if [ -f "$PI_BRIEF_FILE" ] && [ "$MEETING_TYPE" != "Planning" ]; then
+        PI_BRIEF_CONTENT=$(cat "$PI_BRIEF_FILE" 2>/dev/null || echo "")
+        if [ -n "$PI_BRIEF_CONTENT" ]; then
+            # Escape for JSON
+            PI_BRIEF_ESCAPED=$(echo "$PI_BRIEF_CONTENT" | sed ':a;N;$!ba;s/\n/\\n/g' | sed 's/"/\\"/g')
+            PI_BRIEF_SECTION="\\n\\nPOSTDOC BRIEF (private assessment from the postdoc — the student has not seen this):\\n${PI_BRIEF_ESCAPED}"
+        fi
+    fi
+
     # Planning meetings have different context than check-in meetings
     if [ "$MEETING_TYPE" = "Planning" ]; then
         MEETING_CONTEXT="MEETING MODE (Pre-project planning): You are in an interactive planning meeting with the supervisor. This is the initial scoping conversation for the project. Be conversational and collaborative — discuss the research vision, ask clarifying questions, help refine scope.\n\nFocus on:\n  - Understanding the problem space and research question\n  - Discussing what success looks like and what's in/out of scope\n  - Agreeing on initial direction/velocity\n  - Iterating on plan.md together\n  - Identifying initial literature directions for cycle 1 exploration\n\nDo NOT: start exploration, write code, search literature, or do any autonomous work. This is a conversation, not a work session.\n\nWRAP-UP PROTOCOL: When you sense the meeting is concluding — the project scope is clear, plan.md captures the vision, and the supervisor is satisfied with the starting direction — use AskUserQuestion to propose wrapping up. But ONLY when ALL of these are true:\n  - The research question or problem space is reasonably defined\n  - plan.md has been drafted or updated with mutual agreement\n  - Initial direction for cycle 1 exploration has been discussed\n  - The supervisor signals satisfaction ('looks good', 'let's get started', 'that's a good plan', etc.)\n\nDo NOT propose wrapping up if:\n  - The supervisor is still describing the problem or refining scope\n  - There are open questions about what the project should focus on\n  - plan.md hasn't been discussed or is clearly incomplete\n\nWhen proposing wrap-up, use AskUserQuestion with options: 'Approve & proceed' (finalize plan.md, begin cycle 1 exploration), 'Continue discussion' (stay in meeting), 'Revise plan' (update plan.md before approving).\n\nIf approved: finalize plan.md, record any decisions in cycle_01/notes.md, set mode to 'working' in state.yaml, advance step to 1, and begin autonomous exploration (literature review, research question refinement, toward producing Wednesday slides)."
     else
-        MEETING_CONTEXT="MEETING MODE ($MEETING_TYPE check-in, cycle $CYCLE): You are in an interactive meeting with the supervisor. Be conversational and responsive — answer questions, generate ad-hoc plots, explain results, discuss alternatives. You may run quick analysis code and generate visualizations if the supervisor asks.\n\nDo NOT: start autonomous execution work, write production code, begin the next phase, or update state.yaml step.\n\nWRAP-UP PROTOCOL: When you sense the meeting is concluding — the supervisor has reviewed all slides, questions have been discussed, and next steps are clear — use AskUserQuestion to propose wrapping up. But ONLY when ALL of these are true:\n  - The supervisor's questions (slide 5) have been addressed\n  - Next steps / direction have been discussed\n  - The supervisor signals satisfaction ('looks good', 'let's do that', 'go ahead', 'approved', etc.)\n\nDo NOT propose wrapping up if:\n  - The supervisor is actively asking questions or exploring data\n  - You are mid-discussion of a slide or result\n  - The supervisor just asked you to generate a plot or analysis\n  - There are unresolved questions or open threads\n\nWhen proposing wrap-up, use AskUserQuestion with options: 'Approve & proceed' (begin next phase), 'Continue discussion' (stay in meeting), 'Revise plan' (update slides/plan before approving).\n\nIf approved: record meeting outcomes in notes.md, set mode back to 'working' in state.yaml, advance the step, and resume autonomous work."
+        MEETING_CONTEXT="MEETING MODE (PI ${MEETING_TYPE} check-in, cycle $CYCLE): You are in an interactive meeting with the PI (supervisor). The postdoc has already reviewed your work and approved it (or escalated). Be conversational and responsive — answer questions, generate ad-hoc plots, explain results, discuss alternatives. You may run quick analysis code and generate visualizations if the supervisor asks.${PI_BRIEF_SECTION}\n\nDo NOT: start autonomous execution work, write production code, begin the next phase, or update state.yaml step.\n\nIf this meeting was triggered by ESCALATION: the escalation reason is recorded in state.yaml. Address the escalation issue directly with the PI. After the meeting, reset escalation to null in state.yaml.\n\nWRAP-UP PROTOCOL: When you sense the meeting is concluding — the supervisor has reviewed all slides, questions have been discussed, and next steps are clear — use AskUserQuestion to propose wrapping up. But ONLY when ALL of these are true:\n  - The supervisor's questions (slide 5) have been addressed\n  - Next steps / direction have been discussed\n  - The supervisor signals satisfaction ('looks good', 'let's do that', 'go ahead', 'approved', etc.)\n\nDo NOT propose wrapping up if:\n  - The supervisor is actively asking questions or exploring data\n  - You are mid-discussion of a slide or result\n  - The supervisor just asked you to generate a plot or analysis\n  - There are unresolved questions or open threads\n\nWhen proposing wrap-up, use AskUserQuestion with options: 'Approve & proceed' (begin next phase), 'Continue discussion' (stay in meeting), 'Revise plan' (update slides/plan before approving).\n\nIf approved: record meeting outcomes in notes.md (including any PI overrides to direction/velocity), reset escalation to null if set, set mode back to 'working' in state.yaml, advance the step, and resume autonomous work."
     fi
 
     cat <<EOF
@@ -74,10 +145,7 @@ EOF
     exit 0
 fi
 
-# Determine the project directory
-PROJECT_DIR=$(dirname "$STATE_FILE")
-CYCLE_DIR="$PROJECT_DIR/cycles/cycle_$(printf '%02d' "$CYCLE")"
-SLIDES_DIR="$CYCLE_DIR/slides"
+# --- Working mode: enforce gates ---
 
 # Check for existing slides
 HAS_MONDAY=false

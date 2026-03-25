@@ -48,9 +48,13 @@ The user wants to create a new research project. Do the following:
       > ...
       > Reply with your choices (e.g., "1b, 2a, 3a") or "defaults" to use the first option for each.
 
-   d. **Wait for the supervisor's reply.** Do NOT proceed until preferences are confirmed.
+   d. **Ask about PI meeting cadence.** Always include this question:
+      > **PI meeting cadence**: How often should the PI review progress? The postdoc handles most check-ins autonomously.
+      > (a) Every 2 cycles (b) Every 4 cycles *(recommended)* (c) Every 6 cycles (d) Every cycle (no postdoc autonomy)
 
-   e. **Save preferences to memory.** Write or update `supervisor_preferences.md` in the memory directory. **Merge** new answers with existing saved preferences — don't overwrite categories from prior projects that weren't asked about this time. Use this format:
+   e. **Wait for the supervisor's reply.** Do NOT proceed until preferences are confirmed.
+
+   f. **Save preferences to memory.** Write or update `supervisor_preferences.md` in the memory directory. **Merge** new answers with existing saved preferences — don't overwrite categories from prior projects that weren't asked about this time. Use this format:
 
       ```markdown
       ---
@@ -77,6 +81,9 @@ The user wants to create a new research project. Do the following:
    ├── state.yaml
    ├── plan.md
    ├── requirements.txt   ← pinned Python dependencies
+   ├── .postdoc/           ← postdoc private notes (never read by student)
+   │   ├── student_profile.md  ← copied from templates/student_profile_stub.md
+   │   └── reviews/        ← per-cycle review records
    ├── src/               ← persistent reusable code
    │   ├── data/          ← data loading, preprocessing
    │   ├── models/        ← model definitions
@@ -119,7 +126,7 @@ The user wants to create a new research project. Do the following:
    - **Visualization**: matplotlib + seaborn — seaborn for statistical plots, matplotlib for custom figures
    - **Inference framework**: vLLM — use for batched generation, HF transformers for tokenization only
 
-6. **Create `state.yaml`** with:
+6. **Create `state.yaml`** with (using the supervisor_cadence from the PI meeting cadence question):
    ```yaml
    phase: rd
    cycle: 1
@@ -128,6 +135,8 @@ The user wants to create a new research project. Do the following:
    velocity: 0
    mode: meeting
    last_checkin: null
+   supervisor_cadence: 4   # or 2/6/1 based on PI's answer
+   escalation: null
    notes: "Project created. In pre-project planning meeting."
    ```
 
