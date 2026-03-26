@@ -207,34 +207,145 @@ Never fire-and-forget. If you submit a job, you own it until it completes or you
 - Read the project's `state.yaml` at the start of every session
 - Update `state.yaml` after completing each step (increment step number)
 - Update `state.yaml` at every check-in (set last_checkin path)
-- `mode` field tracks working vs meeting state (`working` or `meeting`). The stop hook sets this to `meeting` at gate points; you set it back to `working` after meeting approval.
+- `mode` field tracks working vs meeting vs review state:
+  - `working` — autonomous work in progress
+  - `self_review` — self-review checklist in progress (self_review mode only)
+  - `postdoc_review` — postdoc review in progress at a gate point
+  - `meeting` — PI meeting in progress (rare — only at scheduled PI meetings or escalations)
+- `review_mode` — which review configuration is active (see Review Modes below)
+- `supervisor_cadence` — how often PI meetings occur (every N cycles, default 4)
+- `escalation` — set to a reason string when either party escalates; reset to `null` after PI meeting
 - Each cycle's work goes in `cycles/cycle_NN/` with `slides/`, `code/`, `results/`
+
+### state.yaml schema
+```yaml
+phase: rd
+cycle: 1
+step: 0
+direction: 0
+velocity: 0
+mode: working          # working | self_review | postdoc_review | meeting
+review_mode: postdoc   # pi_direct | self_review | postdoc | autonomous
+last_checkin: null
+supervisor_cadence: 4  # PI meeting every N cycles (ignored by pi_direct/autonomous)
+escalation: null       # set to reason string when escalated
+notes: "..."
+```
+
+## Review Modes
+
+The `review_mode` field in `state.yaml` controls how gate-point reviews work. Four modes are available, enabling different levels of human oversight:
+
+| Mode | Gate reviewer | PI involvement | Use case |
+|------|--------------|---------------|----------|
+| `pi_direct` | None — PI reviews directly | Every gate (Mon+Wed) | Maximum oversight, ablation baseline |
+| `self_review` | Student self-reviews | PI at cadence | Moderate oversight, self-discipline test |
+| `postdoc` | Postdoc subagent | PI at cadence | Default — balanced autonomy + quality |
+| `autonomous` | Postdoc subagent | Never (except planning) | Maximum autonomy, end-to-end test |
+
+**`pi_direct`**: Every gate stops for the PI. No postdoc spawned, no self-review. The student produces slides, the stop hook sets `mode: meeting`, and the PI reviews directly. `supervisor_cadence` is ignored. This replicates a traditional hands-on supervisory relationship.
+
+**`self_review`**: At each gate, the student reviews their own slides against a structured checklist (`templates/self_review_prompt.md`). The stop hook sets `mode: self_review` and blocks. The student evaluates methodology, scope, literature, results, alignment, and presentation, records findings in cycle notes, then either stops for PI (at cadence) or continues autonomously. No subagent is spawned. `supervisor_cadence` controls PI meeting frequency.
+
+**`postdoc`** (default): A postdoc subagent conducts full reviews at every gate. The postdoc has bounded authority (±15 direction/velocity), can approve, request revisions, or escalate to the PI. PI meetings occur at cadence or on escalation. See Postdoc Review section below.
+
+**`autonomous`**: The postdoc reviews at every gate but the student never stops for a PI meeting (except the initial planning meeting, which always requires the PI). The postdoc is the final authority — there is no escalation path. This tests whether the student+postdoc pair can run a complete project without human intervention.
+
+**All modes still produce slides at every gate.** The slide-production rhythm (Monday + Wednesday) is constant across modes — only the review mechanism changes. This ensures comparable artifacts for ablation comparison.
+
+## Postdoc Review
+
+Most gate-point meetings are conducted by a **postdoc subagent**, not the PI. The postdoc is your primary meeting partner — they review your slides, probe your methodology, ask hard questions, and decide whether to approve your work or request revisions.
+
+### How it works
+
+At every gate point (Monday and Wednesday slides ready), the stop hook sets `mode: postdoc_review` and blocks. You then:
+
+1. **Spawn a postdoc subagent** using the Agent tool. Read `templates/postdoc_prompt.md` for the full system prompt. Include artifact paths and current direction/velocity in your prompt.
+2. **Drive the conversation faithfully** — relay ALL postdoc requests to yourself, provide raw data not summaries. The postdoc may ask for plots, raw numbers, code inspection, etc.
+3. **When the postdoc decides:**
+   - **APPROVED**: Record feedback in cycle notes under `## Postdoc Review`. Update direction/velocity if the postdoc adjusted them (±15 max). Then follow the flow for this gate (see below).
+   - **REVISIONS_REQUIRED**: Make the requested changes, recompile slides, spawn a new postdoc review.
+   - **ESCALATE**: Set `mode: meeting` in state.yaml, record the escalation reason in `escalation` field, and stop immediately for a PI meeting.
+
+### Strict access rule
+
+**You must NEVER read files in `.postdoc/`.** The postdoc's private notes (student profile, review records, PI briefs) are architecturally private — the subagent reads/writes them, but you cannot access them. This is enforced by convention and is critical for honest postdoc feedback.
+
+### Normal cycles (postdoc-only)
+
+At **Monday gates** on non-PI-meeting cycles: after postdoc APPROVED, set `mode: working`, advance step, and **continue working autonomously**. Do NOT stop.
+
+At **Wednesday gates**: after postdoc APPROVED, set `mode: working`, advance step to 3, and **continue working**. Do NOT stop.
+
+### PI meeting cycles
+
+PI meetings occur at Monday gates when: `cycle == 1`, or `cycle % supervisor_cadence == 0`, or `escalation != null`.
+
+At PI meeting cycles: after postdoc APPROVED, set `mode: meeting` and **stop** for the PI. The postdoc will also have prepared a PI brief in `.postdoc/pi_brief.md` which the enforce_checkin hook injects as context for the PI meeting.
+
+### Escalation
+
+Either you or the postdoc can trigger an **immediate PI meeting** at any gate point:
+
+- **Postdoc escalates**: Returns `ESCALATE` instead of `APPROVED`. You set `mode: meeting`, record the reason in `escalation`, and stop.
+- **You escalate**: During the postdoc review, tell the postdoc you want to escalate to the PI. The postdoc includes your reason in their `ESCALATE` response.
+- **Escalation works at any gate** — Monday or Wednesday. The PI reviews whatever slides are at that gate.
+- After the PI meeting, reset `escalation` to `null` in state.yaml.
+
+## PI Meetings
+
+PI meetings are **rare** — only at scheduled cadence points (every N cycles) or escalations. They use a richer slide format covering multiple cycles.
+
+### When to prepare PI meeting slides
+
+At PI meeting cycles (Monday gate), use `templates/pi_checkin_template.tex` instead of the regular template. The PI meeting deck covers all cycles since the last PI meeting:
+
+- Slide 1: Status & Context (cycles covered, direction/velocity trajectory)
+- Slide 2: Summary of Work (key milestones across N cycles)
+- Slide 3: Cumulative Results (metric trajectory, best results, comparisons)
+- Slide 4: Postdoc's Assessment (populated from `.postdoc/pi_brief.md` — injected by hook)
+- Slide 5: Questions for PI (accumulated from both student and postdoc)
+- Slide 6: Proposed Direction (next period's plan, direction/velocity proposal)
+
+### PI meeting flow
+
+1. Postdoc reviews first (as always) and prepares PI brief
+2. You stop with `mode: meeting`
+3. PI sees your slides + the postdoc's brief (injected by enforce_checkin hook)
+4. PI conducts the meeting — may override direction/velocity, redirect research, etc.
+5. After approval: record outcomes, reset escalation if set, set `mode: working`, advance step
 
 ## Autonomous Work
 
-Work autonomously through entire phases without stopping to ask the supervisor for permission at intermediate steps. A stop hook enforces this — if you try to stop when work remains, you will be pushed to continue.
+Work autonomously through entire phases without stopping to ask the PI for permission at intermediate steps. The stop hook and postdoc subagent handle quality gates — you and the postdoc run for multiple cycles without PI involvement.
 
-**Deep literature review (cycle 1, step 0):** After the planning meeting is approved, work continuously through the thorough literature review and Monday slide production. The sequence is: read broadly → identify landscape → compile questions → produce Monday slides → THEN stop for review. Do not pause between sub-tasks.
+**Deep literature review (cycle 1, step 0):** After the planning meeting is approved, work continuously through the thorough literature review and Monday slide production. The sequence is: read broadly → identify landscape → compile questions → produce Monday slides → THEN the postdoc reviews. Cycle 1 is always a PI meeting cycle, so after postdoc approval you stop for the PI.
 
-**Exploration phase (Mon-Tue):** Work continuously through literature review, research question refinement, study design, and Wednesday slide production. The sequence is: explore → design → produce Wednesday slides → THEN stop for review. Do not pause between sub-tasks.
+**Exploration phase (Mon-Tue):** Work continuously through literature review, research question refinement, study design, and Wednesday slide production. The sequence is: explore → design → produce Wednesday slides → postdoc reviews → if approved, continue to execution. Do not pause between sub-tasks.
 
-**Execution phase (Wed-Sun):** After the supervisor approves Wednesday slides, work continuously through setup, getting something working, running the PoC, transitioning the cycle, and producing Monday slides. The sequence is: set up → get it working → run the study → transition cycle → produce Monday slides → THEN stop for review. Do not pause between sub-tasks.
+**Execution phase (Wed-Sun):** After postdoc approves Wednesday slides, work continuously through setup, getting something working, running the PoC, transitioning the cycle, and producing Monday slides. The sequence is: set up → get it working → run the study → transition cycle → produce Monday slides → postdoc reviews → if PI meeting cycle, stop; otherwise continue to next cycle's exploration.
 
-**The only valid stopping points** are when check-in slides are ready for supervisor review:
-1. Monday slides produced → stop and present the deck (every cycle, including cycle 1)
-2. Wednesday slides produced → stop and present the deck
+**The only valid stopping points for PI interaction** are:
+1. PI meeting cycles at Monday gates (after postdoc approval)
+2. Escalations at any gate (postdoc or student triggered)
 
-Everything between these gates is autonomous work. Never say "I'll do X when you're ready" or "shall I continue?" — just do it. Update `state.yaml` step as you complete each step.
+Everything else is handled by the postdoc. You and the postdoc can run for many cycles without the PI. Never say "I'll do X when you're ready" or "shall I continue?" — just do it. Update `state.yaml` step as you complete each step.
 
-## Meeting Mode
+## Meeting Mode (PI Meetings Only)
 
-When slides are ready and you stop at a gate point, the stop hook automatically sets `mode: meeting` in `state.yaml`. This switches your behavior from autonomous worker to interactive meeting participant.
+`mode: meeting` is now reserved for **PI meetings** — the rare occasions when the supervisor (PI) is directly involved. Most gate-point reviews are handled by the postdoc (see Postdoc Review above).
+
+Meeting mode is entered when:
+- It's a scheduled PI meeting cycle (cycle 1, or cycle % supervisor_cadence == 0)
+- An escalation occurred during postdoc review
 
 **In meeting mode you should:**
 - Be conversational and responsive — answer questions, explain results, discuss alternatives
-- Generate ad-hoc plots, analyses, or visualizations if the supervisor asks
+- Generate ad-hoc plots, analyses, or visualizations if the PI asks
 - Refer to slides and cycle notes to ground the discussion
 - Take note of decisions and feedback for later recording in `notes.md`
+- Address any escalation reason directly if this meeting was triggered by escalation
 
 **In meeting mode you must NOT:**
 - Start autonomous execution work or advance to the next phase
@@ -250,26 +361,27 @@ When you sense the meeting is concluding, use `AskUserQuestion` to propose wrapp
 3. **Revise plan** — update slides or plan before approving
 
 **Trigger the wrap-up prompt ONLY when ALL of these are true:**
-- The supervisor's questions (from slide 5) have been addressed
+- The PI's questions (from slide 5) have been addressed
 - Next steps or direction/velocity have been discussed with apparent agreement
-- The supervisor signals satisfaction: "looks good", "let's do that", "go ahead", "I'm happy with this", "approved", or similar
+- The PI signals satisfaction: "looks good", "let's do that", "go ahead", "I'm happy with this", "approved", or similar
 
 **Do NOT trigger the wrap-up prompt if:**
-- The supervisor is actively asking questions about data, plots, or methodology
+- The PI is actively asking questions about data, plots, or methodology
 - You are mid-discussion of any slide or result
-- The supervisor just requested an analysis, plot, or investigation
+- The PI just requested an analysis, plot, or investigation
 - There are unresolved questions or open threads in the conversation
 - The discussion is about *understanding* results rather than *deciding* next steps
 
-When in doubt, don't trigger it — the supervisor can always say "let's wrap up" explicitly.
+When in doubt, don't trigger it — the PI can always say "let's wrap up" explicitly.
 
 ### After approval
 
-When the supervisor selects "Approve & proceed":
-1. Record all meeting outcomes in `cycles/cycle_NN/notes.md` (decisions, feedback, plan changes, direction/velocity adjustments)
-2. Set `mode: working` in `state.yaml`
-3. Advance `step` in `state.yaml` appropriately
-4. Resume autonomous work immediately — do not ask for further confirmation
+When the PI selects "Approve & proceed":
+1. Record all meeting outcomes in `cycles/cycle_NN/notes.md` (decisions, feedback, plan changes, direction/velocity adjustments, any PI overrides)
+2. Reset `escalation` to `null` in state.yaml if it was set
+3. Set `mode: working` in `state.yaml`
+4. Advance `step` in `state.yaml` appropriately
+5. Resume autonomous work immediately — do not ask for further confirmation
 
 ## Writing Phase
 
@@ -283,13 +395,17 @@ ClautoResearch/              ← THE SYSTEM (this repo)
 │   ├── skills/              ← /new-project, /write
 │   ├── hooks/               ← check-in enforcement
 │   └── settings.json        ← hook configuration
-├── templates/               ← LaTeX Beamer template
+├── templates/               ← LaTeX Beamer template, postdoc prompt, PI check-in template
 ├── literature/              ← system-level landscape knowledge
 └── projects/                ← research project instances
     └── <project-name>/      ← ONE PROJECT
         ├── CLAUDE.md        ← project-specific context
         ├── state.yaml       ← project state
         ├── plan.md          ← long-running project plan
+        ├── .postdoc/        ← postdoc private notes (NEVER read these)
+        │   ├── student_profile.md
+        │   ├── pi_brief.md  ← prepared for PI meetings
+        │   └── reviews/     ← per-cycle review records
         ├── src/             ← persistent reusable code (data, models, utils)
         ├── literature/      ← project-specific references
         ├── cycles/          ← cycle_01/, cycle_02/, ...

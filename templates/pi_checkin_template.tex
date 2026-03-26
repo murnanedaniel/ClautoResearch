@@ -1,0 +1,137 @@
+\documentclass[aspectratio=169,11pt]{beamer}
+
+\usetheme{metropolis}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{hyperref}
+
+% Colors
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codebg}{rgb}{0.97,0.97,0.97}
+
+% Code listing style
+\lstset{
+  backgroundcolor=\color{codebg},
+  basicstyle=\ttfamily\scriptsize,
+  breaklines=true,
+  captionpos=b,
+  commentstyle=\color{codegreen},
+  keywordstyle=\color{blue},
+  numberstyle=\tiny\color{codegray},
+  showstringspaces=false,
+  frame=single,
+  framerule=0pt,
+}
+
+% Metadata — fill these in per PI check-in
+\newcommand{\cyclerange}{XX--YY}       % e.g. 01--04
+\newcommand{\currentcycle}{YY}          % current cycle number
+\newcommand{\projecttitle}{Project Title}
+\newcommand{\directionval}{--}
+\newcommand{\velocityval}{--}
+
+\title{PI Check-in — Cycles \cyclerange}
+\subtitle{\projecttitle}
+\date{\today}
+\author{Claude (PhD Student)}
+\institute{Supervised by: Daniel Murnane}
+
+\begin{document}
+
+\maketitle
+
+% ============================================================
+% SLIDE 1: Status & Context
+% Multi-cycle overview: where we started, where we are now
+% ============================================================
+\begin{frame}{Status \& Context}
+  \begin{columns}[T]
+    \begin{column}{0.5\textwidth}
+      \textbf{Cycles covered:} \cyclerange \\
+      \textbf{Current cycle:} \currentcycle \\
+      \textbf{Direction:} \directionval\% \\
+      \textbf{Velocity:} \velocityval\%
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \textbf{Direction/Velocity trajectory:} \\
+      % Show how d/v evolved across cycles
+      % e.g. a small table or sparkline
+      \begin{itemize}
+        \item Cycle XX: d=??, v=??
+        \item Cycle YY: d=??, v=??
+      \end{itemize}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% ============================================================
+% SLIDE 2: Summary of Work
+% What was accomplished across N cycles — key milestones
+% ============================================================
+\begin{frame}{Summary of Work (Cycles \cyclerange)}
+  \begin{itemize}
+    \item TODO: Key milestone from cycle XX
+    \item TODO: Key milestone from cycle XX+1
+    \item TODO: Key milestone from cycle YY
+  \end{itemize}
+\end{frame}
+
+% ============================================================
+% SLIDE 3: Cumulative Results
+% Trajectory of metrics, best results, comparisons across cycles
+% ============================================================
+\begin{frame}{Cumulative Results}
+  % \includegraphics[width=\textwidth]{../results/metric_trajectory.pdf}
+  TODO: plots showing metric evolution across cycles, comparison tables,
+  best results achieved so far
+\end{frame}
+
+% ============================================================
+% SLIDE 4: Postdoc's Assessment
+% This content is drawn from .postdoc/pi_brief.md
+% The enforce_checkin hook injects it as meeting context
+% Summarize the postdoc's key observations here
+% ============================================================
+\begin{frame}{Postdoc's Assessment}
+  % Populated from the postdoc's PI brief
+  \begin{itemize}
+    \item TODO: Postdoc's overall assessment
+    \item TODO: Key concerns raised
+    \item TODO: Patterns observed
+  \end{itemize}
+\end{frame}
+
+% ============================================================
+% SLIDE 5: Questions for PI
+% Accumulated from both student and postdoc across cycles
+% ============================================================
+\begin{frame}{Questions for PI}
+  \begin{enumerate}
+    \item TODO: Strategic question accumulated over cycles
+    \item TODO: Decision that needs PI input
+    \item TODO: Postdoc-flagged question
+  \end{enumerate}
+\end{frame}
+
+% ============================================================
+% SLIDE 6: Proposed Direction
+% Next period's plan and direction/velocity proposal
+% ============================================================
+\begin{frame}{Proposed Direction}
+  \textbf{Plan for next period (cycles YY--ZZ):}
+  \begin{itemize}
+    \item TODO: High-level research direction
+  \end{itemize}
+
+  \vspace{1em}
+
+  \textbf{Proposed direction/velocity:} \\
+  Direction: \directionval\% $\rightarrow$ ??\% \\
+  Velocity: \velocityval\% $\rightarrow$ ??\%
+\end{frame}
+
+\end{document}
