@@ -64,19 +64,23 @@ Describe the study that you will execute.
 
 Unlike the exploratory phase of the cycle, the to-do list that has been approved should not be amended, but it CAN be appended to. That is, if you find that you need to do some additional work to execute the study, you can add it to the list, but you should not remove any of the tasks that were approved. This is to ensure that you are executing on the plan that was agreed upon, while still allowing for some flexibility as you execute the study. You are also welcome to explore new ideas as a result of the outcomes of the approved tasks, whether that is more tasks in existing studies, or new studies altogether. You can add these to the plan, but they should be clearly marked as "new" and not part of the original plan.
 
-## Postdoc Review
+## Gate Review
 
 ### Monday Review
+- **Review mode**: (pi_direct / self_review / postdoc / autonomous)
 - **Decision**: (APPROVED / REVISIONS_REQUIRED / ESCALATE)
-- **Direction/Velocity adjustments**: (any changes made by postdoc, ±15 max)
-- **Key feedback**: (summary of postdoc's main points)
-- **Items to watch**: (things the postdoc flagged for attention)
+- **Direction/Velocity adjustments**: (any changes, ±15 max for postdoc)
+- **Key feedback**: (summary of reviewer's main points)
+- **Items to watch**: (things flagged for attention)
+- **Self-review notes** (if self_review mode): (concerns identified, checklist items flagged)
 
 ### Wednesday Review
+- **Review mode**: (pi_direct / self_review / postdoc / autonomous)
 - **Decision**: (APPROVED / REVISIONS_REQUIRED / ESCALATE)
-- **Direction/Velocity adjustments**: (any changes made by postdoc, ±15 max)
-- **Key feedback**: (summary of postdoc's main points)
-- **Items to watch**: (things the postdoc flagged for attention)
+- **Direction/Velocity adjustments**: (any changes, ±15 max for postdoc)
+- **Key feedback**: (summary of reviewer's main points)
+- **Items to watch**: (things flagged for attention)
+- **Self-review notes** (if self_review mode): (concerns identified, checklist items flagged)
 
 ## Open Questions
 

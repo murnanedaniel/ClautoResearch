@@ -48,9 +48,18 @@ The user wants to create a new research project. Do the following:
       > ...
       > Reply with your choices (e.g., "1b, 2a, 3a") or "defaults" to use the first option for each.
 
-   d. **Ask about PI meeting cadence.** Always include this question:
-      > **PI meeting cadence**: How often should the PI review progress? The postdoc handles most check-ins autonomously.
-      > (a) Every 2 cycles (b) Every 4 cycles *(recommended)* (c) Every 6 cycles (d) Every cycle (no postdoc autonomy)
+   d. **Ask about review mode and PI cadence.** Always include these questions:
+      > **Review mode**: How should check-in reviews work?
+      > (a) `pi_direct` — PI reviews every check-in directly (most hands-on)
+      > (b) `self_review` — Student self-reviews, PI meets every N cycles
+      > (c) `postdoc` — Postdoc subagent reviews, PI meets every N cycles *(recommended)*
+      > (d) `autonomous` — Postdoc reviews, no PI involvement after planning meeting
+
+      If `self_review` or `postdoc` is selected, also ask:
+      > **PI meeting cadence**: How often should the PI review progress?
+      > (a) Every 2 cycles (b) Every 4 cycles *(recommended)* (c) Every 6 cycles
+
+      If `pi_direct` or `autonomous` is selected, skip the cadence question (it's not applicable).
 
    e. **Wait for the supervisor's reply.** Do NOT proceed until preferences are confirmed.
 
@@ -126,7 +135,7 @@ The user wants to create a new research project. Do the following:
    - **Visualization**: matplotlib + seaborn — seaborn for statistical plots, matplotlib for custom figures
    - **Inference framework**: vLLM — use for batched generation, HF transformers for tokenization only
 
-6. **Create `state.yaml`** with (using the supervisor_cadence from the PI meeting cadence question):
+6. **Create `state.yaml`** with (using review_mode and supervisor_cadence from the review mode questions):
    ```yaml
    phase: rd
    cycle: 1
@@ -134,8 +143,9 @@ The user wants to create a new research project. Do the following:
    direction: 0
    velocity: 0
    mode: meeting
+   review_mode: postdoc    # pi_direct | self_review | postdoc | autonomous
    last_checkin: null
-   supervisor_cadence: 4   # or 2/6/1 based on PI's answer
+   supervisor_cadence: 4   # or 2/6 based on PI's answer (ignored for pi_direct/autonomous)
    escalation: null
    notes: "Project created. In pre-project planning meeting."
    ```

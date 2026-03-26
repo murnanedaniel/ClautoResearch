@@ -209,8 +209,10 @@ Never fire-and-forget. If you submit a job, you own it until it completes or you
 - Update `state.yaml` at every check-in (set last_checkin path)
 - `mode` field tracks working vs meeting vs review state:
   - `working` — autonomous work in progress
+  - `self_review` — self-review checklist in progress (self_review mode only)
   - `postdoc_review` — postdoc review in progress at a gate point
   - `meeting` — PI meeting in progress (rare — only at scheduled PI meetings or escalations)
+- `review_mode` — which review configuration is active (see Review Modes below)
 - `supervisor_cadence` — how often PI meetings occur (every N cycles, default 4)
 - `escalation` — set to a reason string when either party escalates; reset to `null` after PI meeting
 - Each cycle's work goes in `cycles/cycle_NN/` with `slides/`, `code/`, `results/`
@@ -222,12 +224,34 @@ cycle: 1
 step: 0
 direction: 0
 velocity: 0
-mode: working          # working | postdoc_review | meeting
+mode: working          # working | self_review | postdoc_review | meeting
+review_mode: postdoc   # pi_direct | self_review | postdoc | autonomous
 last_checkin: null
-supervisor_cadence: 4  # PI meeting every N cycles
+supervisor_cadence: 4  # PI meeting every N cycles (ignored by pi_direct/autonomous)
 escalation: null       # set to reason string when escalated
 notes: "..."
 ```
+
+## Review Modes
+
+The `review_mode` field in `state.yaml` controls how gate-point reviews work. Four modes are available, enabling different levels of human oversight:
+
+| Mode | Gate reviewer | PI involvement | Use case |
+|------|--------------|---------------|----------|
+| `pi_direct` | None — PI reviews directly | Every gate (Mon+Wed) | Maximum oversight, ablation baseline |
+| `self_review` | Student self-reviews | PI at cadence | Moderate oversight, self-discipline test |
+| `postdoc` | Postdoc subagent | PI at cadence | Default — balanced autonomy + quality |
+| `autonomous` | Postdoc subagent | Never (except planning) | Maximum autonomy, end-to-end test |
+
+**`pi_direct`**: Every gate stops for the PI. No postdoc spawned, no self-review. The student produces slides, the stop hook sets `mode: meeting`, and the PI reviews directly. `supervisor_cadence` is ignored. This replicates a traditional hands-on supervisory relationship.
+
+**`self_review`**: At each gate, the student reviews their own slides against a structured checklist (`templates/self_review_prompt.md`). The stop hook sets `mode: self_review` and blocks. The student evaluates methodology, scope, literature, results, alignment, and presentation, records findings in cycle notes, then either stops for PI (at cadence) or continues autonomously. No subagent is spawned. `supervisor_cadence` controls PI meeting frequency.
+
+**`postdoc`** (default): A postdoc subagent conducts full reviews at every gate. The postdoc has bounded authority (±15 direction/velocity), can approve, request revisions, or escalate to the PI. PI meetings occur at cadence or on escalation. See Postdoc Review section below.
+
+**`autonomous`**: The postdoc reviews at every gate but the student never stops for a PI meeting (except the initial planning meeting, which always requires the PI). The postdoc is the final authority — there is no escalation path. This tests whether the student+postdoc pair can run a complete project without human intervention.
+
+**All modes still produce slides at every gate.** The slide-production rhythm (Monday + Wednesday) is constant across modes — only the review mechanism changes. This ensures comparable artifacts for ablation comparison.
 
 ## Postdoc Review
 

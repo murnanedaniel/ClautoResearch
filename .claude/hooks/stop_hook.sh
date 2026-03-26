@@ -1,19 +1,17 @@
 #!/bin/bash
 # Stop hook: prevent Claude from stopping when autonomous work remains.
 # Fires when Claude tries to end its turn. Blocks unless at a gate point
-# (slides ready for postdoc/supervisor review).
+# (slides ready for review).
 #
-# Gate points (stopping IS correct):
-#   1. step=0, Monday slides exist → postdoc review, then maybe PI meeting
-#   2. step=2, Wednesday slides exist → postdoc review, then maybe PI meeting (escalation)
+# Review modes (review_mode in state.yaml):
+#   pi_direct    — PI reviews every gate directly. No postdoc, no self-review.
+#   self_review  — Student self-reviews at gates, PI meets at cadence.
+#   postdoc      — Postdoc subagent reviews at gates, PI meets at cadence.
+#   autonomous   — Postdoc reviews at all gates, never stops for PI.
 #
-# Postdoc flow:
-#   - mode=working, slides ready → set mode=postdoc_review, block with "spawn postdoc"
-#   - mode=postdoc_review → block with "continue postdoc review"
-#   - mode=meeting → allow stop (PI meeting, postdoc already approved or escalated)
-#
-# PI meeting determination:
-#   is_pi_meeting = (cycle == 1) || (cycle % supervisor_cadence == 0) || (escalation != null)
+# Gate points:
+#   1. step=0, Monday slides exist
+#   2. step=2, Wednesday slides exist
 #
 # Safety: uses stop_hook_active + counter file to prevent infinite loops.
 # After 3 consecutive blocks at the same step, allows the stop.
@@ -48,6 +46,8 @@ CYCLE=$(grep '^cycle:' "$STATE_FILE" | awk '{print $2}')
 PHASE=$(grep '^phase:' "$STATE_FILE" | awk '{print $2}')
 MODE=$(grep '^mode:' "$STATE_FILE" | awk '{print $2}')
 MODE="${MODE:-working}"
+REVIEW_MODE=$(grep '^review_mode:' "$STATE_FILE" | awk '{print $2}')
+REVIEW_MODE="${REVIEW_MODE:-postdoc}"
 SUPERVISOR_CADENCE=$(grep '^supervisor_cadence:' "$STATE_FILE" | awk '{print $2}')
 SUPERVISOR_CADENCE="${SUPERVISOR_CADENCE:-4}"
 ESCALATION=$(grep '^escalation:' "$STATE_FILE" | sed 's/^escalation: *//')
@@ -65,13 +65,23 @@ if [ "$MODE" = "meeting" ]; then
 fi
 
 # --- Determine if this is a PI meeting cycle ---
+# For pi_direct: every cycle is a PI meeting
+# For autonomous: never a PI meeting (except cycle 1 planning, handled separately)
+# For self_review/postdoc: cadence-based
 IS_PI_MEETING=false
-if [ "$CYCLE" -eq 1 ]; then
+if [ "$REVIEW_MODE" = "pi_direct" ]; then
     IS_PI_MEETING=true
-elif [ "$ESCALATION" != "null" ] && [ "$ESCALATION" != "" ]; then
-    IS_PI_MEETING=true
-elif [ "$SUPERVISOR_CADENCE" -gt 0 ] && [ $((CYCLE % SUPERVISOR_CADENCE)) -eq 0 ]; then
-    IS_PI_MEETING=true
+elif [ "$REVIEW_MODE" = "autonomous" ]; then
+    IS_PI_MEETING=false
+else
+    # self_review or postdoc: cadence-based
+    if [ "$CYCLE" -eq 1 ]; then
+        IS_PI_MEETING=true
+    elif [ "$ESCALATION" != "null" ] && [ "$ESCALATION" != "" ]; then
+        IS_PI_MEETING=true
+    elif [ "$SUPERVISOR_CADENCE" -gt 0 ] && [ $((CYCLE % SUPERVISOR_CADENCE)) -eq 0 ]; then
+        IS_PI_MEETING=true
+    fi
 fi
 
 # --- Check slides ---
@@ -89,70 +99,141 @@ if ls "$SLIDES_DIR"/cycle_*_wednesday.pdf >/dev/null 2>&1; then
     HAS_WEDNESDAY=true
 fi
 
-# --- Gate 1: Monday slides ready (step 0) ---
-if [ "$STEP" -eq 0 ] && [ "$HAS_MONDAY" = true ]; then
-    if [ "$MODE" = "postdoc_review" ]; then
-        # Postdoc review in progress — block, tell student to continue
-        if [ "$IS_PI_MEETING" = true ]; then
-            AFTER_MSG="When the postdoc returns APPROVED: record feedback in cycle notes under '## Postdoc Review', set mode to 'meeting' in state.yaml, then stop for PI meeting. The postdoc will also prepare a PI brief. If ESCALATE: same flow — set mode to 'meeting' and stop."
-        else
-            AFTER_MSG="When the postdoc returns APPROVED: record feedback in cycle notes under '## Postdoc Review', update direction/velocity per postdoc's adjustments in state.yaml, set mode to 'working', advance step to 1, and CONTINUE working (do NOT stop — this is not a PI meeting cycle). If ESCALATE: set mode to 'meeting' in state.yaml and stop for an immediate PI meeting."
-        fi
-        cat <<HOOK_EOF
+DIRECTION=$(grep '^direction:' "$STATE_FILE" | awk '{print $2}')
+VELOCITY=$(grep '^velocity:' "$STATE_FILE" | awk '{print $2}')
+
+# --- Helper: set mode in state.yaml ---
+set_mode() {
+    local NEW_MODE="$1"
+    sed -i "s/^mode:.*/mode: ${NEW_MODE}/" "$STATE_FILE"
+    if ! grep -q '^mode:' "$STATE_FILE"; then
+        echo "mode: ${NEW_MODE}" >> "$STATE_FILE"
+    fi
+}
+
+# --- Helper: emit block decision ---
+block() {
+    local REASON="$1"
+    cat <<HOOK_EOF
 {
   "decision": "block",
-  "reason": "POSTDOC REVIEW IN PROGRESS: Continue the review conversation with the postdoc subagent. Answer questions, provide requested data/plots. ${AFTER_MSG} If REVISIONS_REQUIRED: make changes, recompile slides, spawn a new postdoc review."
+  "reason": "$REASON"
 }
 HOOK_EOF
-        exit 0
+    exit 0
+}
+
+# ================================================================
+# GATE LOGIC: dispatches based on review_mode
+# ================================================================
+
+# --- Gate handler for pi_direct mode ---
+handle_gate_pi_direct() {
+    local GATE_TYPE="$1"  # monday or wednesday
+    local NEXT_STEP="$2"  # step to advance to after meeting
+
+    # Simple: set mode to meeting, allow stop
+    set_mode "meeting"
+    rm -f "/tmp/clauto_stop_count_${SESSION_ID}"
+    exit 0
+}
+
+# --- Gate handler for self_review mode ---
+handle_gate_self_review() {
+    local GATE_TYPE="$1"
+    local NEXT_STEP="$2"
+
+    if [ "$MODE" = "self_review" ]; then
+        # Self-review in progress — block until complete
+        if [ "$IS_PI_MEETING" = true ]; then
+            AFTER_MSG="After completing self-review: record your assessment in cycle notes under '## Gate Review', set mode to 'meeting' in state.yaml, then stop for PI meeting."
+        else
+            AFTER_MSG="After completing self-review: record your assessment in cycle notes under '## Gate Review', set mode to 'working' in state.yaml, advance step to ${NEXT_STEP}, and CONTINUE working (do NOT stop — this is not a PI meeting cycle)."
+        fi
+        block "SELF-REVIEW IN PROGRESS: Complete your self-review using the checklist from templates/self_review_prompt.md. Review your ${GATE_TYPE} slides against all criteria (methodology, scope, literature, results, alignment, presentation). ${AFTER_MSG}"
+    else
+        # First arrival at gate — enter self-review
+        set_mode "self_review"
+
+        if [ "$IS_PI_MEETING" = true ]; then
+            FLOW_MSG="This is a PI MEETING CYCLE. After self-review, set mode to 'meeting' and stop — the PI will review."
+        else
+            FLOW_MSG="This is a NORMAL CYCLE. After self-review, record assessment, set mode to 'working', advance step to ${NEXT_STEP}, and CONTINUE working autonomously."
+        fi
+
+        block "$(echo "${GATE_TYPE}" | tr '[:lower:]' '[:upper:]') SLIDES READY — SELF-REVIEW REQUIRED: Read templates/self_review_prompt.md for the full checklist. Review your slides against all criteria. Be honest and thorough. ${FLOW_MSG}"
+    fi
+}
+
+# --- Gate handler for postdoc mode ---
+handle_gate_postdoc() {
+    local GATE_TYPE="$1"
+    local NEXT_STEP="$2"
+    local SLIDE_FILE="${SLIDES_DIR}/cycle_${CYCLE_FMT}_${GATE_TYPE}.pdf"
+
+    if [ "$MODE" = "postdoc_review" ]; then
+        # Postdoc review in progress — block
+        if [ "$IS_PI_MEETING" = true ]; then
+            AFTER_MSG="When the postdoc returns APPROVED: record feedback in cycle notes under '## Gate Review', set mode to 'meeting' in state.yaml, then stop for PI meeting. The postdoc will also prepare a PI brief. If ESCALATE: same flow — set mode to 'meeting' and stop."
+        else
+            AFTER_MSG="When the postdoc returns APPROVED: record feedback in cycle notes under '## Gate Review', update direction/velocity per postdoc's adjustments in state.yaml, set mode to 'working', advance step to ${NEXT_STEP}, and CONTINUE working (do NOT stop — this is not a PI meeting cycle). If ESCALATE: set mode to 'meeting' in state.yaml and stop for an immediate PI meeting."
+        fi
+        block "POSTDOC REVIEW IN PROGRESS: Continue the review conversation with the postdoc subagent. Answer questions, provide requested data/plots. ${AFTER_MSG} If REVISIONS_REQUIRED: make changes, recompile slides, spawn a new postdoc review."
     else
         # First arrival at gate — enter postdoc review
-        sed -i 's/^mode:.*/mode: postdoc_review/' "$STATE_FILE"
-        if ! grep -q '^mode:' "$STATE_FILE"; then
-            echo "mode: postdoc_review" >> "$STATE_FILE"
-        fi
+        set_mode "postdoc_review"
 
         if [ "$IS_PI_MEETING" = true ]; then
             FLOW_MSG="This is a PI MEETING CYCLE. After the postdoc approves, set mode to 'meeting' and stop — the PI will review. Tell the postdoc this is a PI meeting cycle so they prepare a PI brief in .postdoc/pi_brief.md."
         else
-            FLOW_MSG="This is a NORMAL CYCLE (postdoc-only). After the postdoc approves, record feedback, update direction/velocity, set mode to 'working', advance step to 1, and CONTINUE working autonomously. Do NOT stop. However, if the postdoc returns ESCALATE, set mode to 'meeting' and stop for an immediate PI meeting."
+            FLOW_MSG="This is a NORMAL CYCLE (postdoc-only). After the postdoc approves, record feedback, update direction/velocity, set mode to 'working', advance step to ${NEXT_STEP}, and CONTINUE working autonomously. Do NOT stop. However, if the postdoc returns ESCALATE, set mode to 'meeting' and stop for an immediate PI meeting."
         fi
 
-        cat <<HOOK_EOF
-{
-  "decision": "block",
-  "reason": "MONDAY SLIDES READY — POSTDOC REVIEW REQUIRED: Spawn a postdoc subagent using the Agent tool. Read templates/postdoc_prompt.md for the full system prompt. Provide artifact paths in your Agent prompt: slide PDF=${SLIDES_DIR}/cycle_${CYCLE_FMT}_monday.pdf, notes=${CYCLE_DIR}/notes.md, results=${CYCLE_DIR}/results/, code=${CYCLE_DIR}/code/, plan=${PROJECT_DIR}/plan.md, project=${PROJECT_DIR}. Also tell the postdoc: cycle=${CYCLE}, check-in=monday, direction=$(grep '^direction:' "$STATE_FILE" | awk '{print $2}'), velocity=$(grep '^velocity:' "$STATE_FILE" | awk '{print $2}'). ${FLOW_MSG} Drive the conversation faithfully — relay ALL postdoc requests, provide raw data not summaries. You must NEVER read .postdoc/ files."
-}
-HOOK_EOF
-        exit 0
+        block "$(echo "${GATE_TYPE}" | tr '[:lower:]' '[:upper:]') SLIDES READY — POSTDOC REVIEW REQUIRED: Spawn a postdoc subagent using the Agent tool. Read templates/postdoc_prompt.md for the full system prompt. Provide artifact paths in your Agent prompt: slide PDF=${SLIDE_FILE}, notes=${CYCLE_DIR}/notes.md, results=${CYCLE_DIR}/results/, code=${CYCLE_DIR}/code/, plan=${PROJECT_DIR}/plan.md, project=${PROJECT_DIR}. Also tell the postdoc: cycle=${CYCLE}, check-in=${GATE_TYPE}, direction=${DIRECTION}, velocity=${VELOCITY}. ${FLOW_MSG} Drive the conversation faithfully — relay ALL postdoc requests, provide raw data not summaries. You must NEVER read .postdoc/ files."
     fi
+}
+
+# --- Gate handler for autonomous mode ---
+handle_gate_autonomous() {
+    local GATE_TYPE="$1"
+    local NEXT_STEP="$2"
+    local SLIDE_FILE="${SLIDES_DIR}/cycle_${CYCLE_FMT}_${GATE_TYPE}.pdf"
+
+    if [ "$MODE" = "postdoc_review" ]; then
+        # Postdoc review in progress — block
+        block "POSTDOC REVIEW IN PROGRESS (autonomous mode): Continue the review conversation with the postdoc subagent. Answer questions, provide requested data/plots. When the postdoc returns APPROVED: record feedback in cycle notes under '## Gate Review', update direction/velocity per postdoc's adjustments in state.yaml, set mode to 'working', advance step to ${NEXT_STEP}, and CONTINUE working. In autonomous mode you NEVER stop for a PI meeting. If REVISIONS_REQUIRED: make changes, recompile slides, spawn a new postdoc review."
+    else
+        # First arrival at gate — enter postdoc review
+        set_mode "postdoc_review"
+
+        block "$(echo "${GATE_TYPE}" | tr '[:lower:]' '[:upper:]') SLIDES READY — POSTDOC REVIEW (autonomous mode): Spawn a postdoc subagent using the Agent tool. Read templates/postdoc_prompt.md for the full system prompt. Provide artifact paths: slide PDF=${SLIDE_FILE}, notes=${CYCLE_DIR}/notes.md, results=${CYCLE_DIR}/results/, code=${CYCLE_DIR}/code/, plan=${PROJECT_DIR}/plan.md, project=${PROJECT_DIR}. Also tell the postdoc: cycle=${CYCLE}, check-in=${GATE_TYPE}, direction=${DIRECTION}, velocity=${VELOCITY}. Tell the postdoc this is AUTONOMOUS MODE — they are the final authority. There is no PI escalation. After approval, set mode to 'working', advance step to ${NEXT_STEP}, and continue. Drive the conversation faithfully. You must NEVER read .postdoc/ files."
+    fi
+}
+
+# ================================================================
+# GATE CHECKS
+# ================================================================
+
+# --- Gate 1: Monday slides ready (step 0) ---
+if [ "$STEP" -eq 0 ] && [ "$HAS_MONDAY" = true ]; then
+    case "$REVIEW_MODE" in
+        pi_direct)     handle_gate_pi_direct "monday" 1 ;;
+        self_review)   handle_gate_self_review "monday" 1 ;;
+        postdoc)       handle_gate_postdoc "monday" 1 ;;
+        autonomous)    handle_gate_autonomous "monday" 1 ;;
+        *)             handle_gate_postdoc "monday" 1 ;;  # default
+    esac
 fi
 
 # --- Gate 2: Wednesday slides ready (step 2) ---
 if [ "$STEP" -eq 2 ] && [ "$HAS_WEDNESDAY" = true ]; then
-    if [ "$MODE" = "postdoc_review" ]; then
-        # Postdoc review in progress — block
-        cat <<HOOK_EOF
-{
-  "decision": "block",
-  "reason": "POSTDOC REVIEW IN PROGRESS: Continue the review conversation with the postdoc subagent. Answer questions, provide requested data/plots. When the postdoc returns APPROVED: record feedback in cycle notes under '## Postdoc Review', update direction/velocity per postdoc's adjustments in state.yaml, set mode to 'working', advance step to 3, and CONTINUE working (Wednesday gates are normally postdoc-only). If ESCALATE: set mode to 'meeting' in state.yaml and stop for an immediate PI meeting at this Wednesday gate. If REVISIONS_REQUIRED: make changes, recompile slides, spawn a new postdoc review."
-}
-HOOK_EOF
-        exit 0
-    else
-        # First arrival at gate — enter postdoc review
-        sed -i 's/^mode:.*/mode: postdoc_review/' "$STATE_FILE"
-        if ! grep -q '^mode:' "$STATE_FILE"; then
-            echo "mode: postdoc_review" >> "$STATE_FILE"
-        fi
-        cat <<HOOK_EOF
-{
-  "decision": "block",
-  "reason": "WEDNESDAY SLIDES READY — POSTDOC REVIEW REQUIRED: Spawn a postdoc subagent using the Agent tool. Read templates/postdoc_prompt.md for the full system prompt. Provide artifact paths in your Agent prompt: slide PDF=${SLIDES_DIR}/cycle_${CYCLE_FMT}_wednesday.pdf, notes=${CYCLE_DIR}/notes.md, results=${CYCLE_DIR}/results/, code=${CYCLE_DIR}/code/, plan=${PROJECT_DIR}/plan.md, project=${PROJECT_DIR}. Also tell the postdoc: cycle=${CYCLE}, check-in=wednesday, direction=$(grep '^direction:' "$STATE_FILE" | awk '{print $2}'), velocity=$(grep '^velocity:' "$STATE_FILE" | awk '{print $2}'). This is a NORMAL REVIEW (postdoc-only). After approval, set mode to 'working', advance step to 3, and continue. If the postdoc returns ESCALATE, set mode to 'meeting' and stop for an immediate PI meeting. Drive the conversation faithfully — relay ALL postdoc requests, provide raw data not summaries. You must NEVER read .postdoc/ files."
-}
-HOOK_EOF
-        exit 0
-    fi
+    case "$REVIEW_MODE" in
+        pi_direct)     handle_gate_pi_direct "wednesday" 3 ;;
+        self_review)   handle_gate_self_review "wednesday" 3 ;;
+        postdoc)       handle_gate_postdoc "wednesday" 3 ;;
+        autonomous)    handle_gate_autonomous "wednesday" 3 ;;
+        *)             handle_gate_postdoc "wednesday" 3 ;;  # default
+    esac
 fi
 
 # --- Not at a gate: should block. Check safety valve first. ---
@@ -165,12 +246,10 @@ if [ "$STOP_HOOK_ACTIVE" = "true" ]; then
         STORED_COUNT=$(echo "$STORED" | cut -d: -f2)
 
         if [ "$STORED_STEP" != "$STEP" ]; then
-            # Step changed — progress was made, reset counter
             echo "${STEP}:1" > "$COUNTER_FILE"
         else
             COUNT=$((STORED_COUNT + 1))
             if [ "$COUNT" -ge 3 ]; then
-                # Safety valve: stuck at same step 3 times, let it stop
                 rm -f "$COUNTER_FILE"
                 exit 0
             fi
@@ -180,7 +259,6 @@ if [ "$STOP_HOOK_ACTIVE" = "true" ]; then
         echo "${STEP}:1" > "$COUNTER_FILE"
     fi
 else
-    # First block — initialize counter
     echo "${STEP}:0" > "$COUNTER_FILE"
 fi
 
