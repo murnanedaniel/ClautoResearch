@@ -4,6 +4,8 @@ An AI Scientist built entirely on Claude Code. No frameworks, no multi-LLM orche
 
 ## How It Works
 
+![ClautoResearch Workflow](assets/workflow.gif)
+
 You give Claude a research topic. Claude works in **R&D cycles**, checking in with you via **LaTeX slide decks** — exactly like a PhD student meeting their supervisor twice a week. You review, redirect, and approve at each step. Nothing happens without your sign-off.
 
 Each cycle:
