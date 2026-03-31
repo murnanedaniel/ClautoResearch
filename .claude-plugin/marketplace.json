@@ -1,0 +1,12 @@
+{
+  "name": "clauto-research-marketplace",
+  "metadata": { "description": "ClautoResearch plugin: Claude as a PhD student, you as the supervisor" },
+  "owner": { "name": "Daniel Murnane" },
+  "plugins": [
+    {
+      "name": "clauto-research",
+      "source": "./",
+      "description": "AI Scientist built on Claude Code — R&D cycles with LaTeX slide deck check-ins"
+    }
+  ]
+}

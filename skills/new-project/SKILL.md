@@ -1,6 +1,6 @@
 ---
 name: new-project
-description: Scaffold a new research project instance under projects/
+description: Scaffold a new research project in the current directory
 allowed-tools: Bash, Write, Read, Glob, Edit
 ---
 
@@ -8,13 +8,15 @@ allowed-tools: Bash, Write, Read, Glob, Edit
 
 The user wants to create a new research project. Do the following:
 
-1. **Get the project topic** from the user's message (the argument after `/new-project`). If none provided, ask.
+1. **Discover the plugin root.** Run `echo "${CLAUDE_PLUGIN_ROOT}"` to get the plugin installation path. Store this as PLUGIN_ROOT for all subsequent steps that reference plugin files.
 
-2. **Create a short kebab-case name** from the topic (e.g., "graph neural network pruning" → `graph-pruning`).
+2. **Get the project topic** from the user's message (the argument after `/clauto-research:new-project`). If none provided, ask.
 
-3. **Collect supervisor preferences.**
+3. **Create a short kebab-case name** from the topic (e.g., "graph neural network pruning" → `graph-pruning`).
 
-   a. **Check for saved preferences**: Use `Glob` to look for `supervisor_preferences.md` in the memory directory (`/home/murnanedaniel/.claude/projects/-home-murnanedaniel-Research-AIScientists-ClautoResearch/memory/`). If found, `Read` it to get previously saved preferences.
+4. **Collect supervisor preferences.**
+
+   a. **Check for saved preferences**: Look for a `supervisor_preferences.md` file in the Claude Code memory directory. To find the memory directory, run: `echo "$HOME/.claude/projects/$(echo "$CLAUDE_PROJECT_DIR" | tr '/' '-' | sed 's/^-//')/memory/"`. If found, `Read` it to get previously saved preferences.
 
    b. **Generate topic-relevant preference questions.** Based on the project topic, come up with 3-6 multiple-choice preference questions that are relevant to THIS project. Only ask what matters for the topic — don't ask about GNN libraries for a statistics project, don't ask about data serialization formats for a pure theory project.
 
@@ -50,7 +52,7 @@ The user wants to create a new research project. Do the following:
 
    d. **Wait for the supervisor's reply.** Do NOT proceed until preferences are confirmed.
 
-   e. **Save preferences to memory.** Write or update `supervisor_preferences.md` in the memory directory. **Merge** new answers with existing saved preferences — don't overwrite categories from prior projects that weren't asked about this time. Use this format:
+   e. **Save preferences to memory.** Determine the memory directory (same command as step 4a). Write or update `supervisor_preferences.md` there. **Merge** new answers with existing saved preferences — don't overwrite categories from prior projects that weren't asked about this time. Use this format:
 
       ```markdown
       ---
@@ -70,27 +72,38 @@ The user wants to create a new research project. Do the following:
       `- [supervisor_preferences.md](supervisor_preferences.md) — Default tool/environment preferences for new research projects`
       If it already exists, leave it. If not, append it.
 
-4. **Scaffold the project directory** under `projects/<name>/`:
+5. **Scaffold the project directory** in the current working directory:
    ```
-   projects/<name>/
+   ./
    ├── CLAUDE.md
    ├── state.yaml
    ├── plan.md
-   ├── requirements.txt   ← pinned Python dependencies
-   ├── src/               ← persistent reusable code
-   │   ├── data/          ← data loading, preprocessing
-   │   ├── models/        ← model definitions
-   │   └── utils/         ← shared utilities
+   ├── requirements.txt
+   ├── templates/
+   ├── src/
+   │   ├── data/
+   │   ├── models/
+   │   └── utils/
    ├── literature/
    ├── cycles/
    │   └── cycle_01/
    │       ├── slides/
-   │       ├── code/      ← this cycle's experiments (notebooks, scripts)
-   │       └── results/   ← outputs, plots, metrics
+   │       ├── code/
+   │       └── results/
    └── paper/
    ```
 
-5. **Create the project `CLAUDE.md`** using the confirmed preferences. Include an `## Environment & Tools` section with each preference as an actionable instruction:
+6. **Copy templates from the plugin.** Using the PLUGIN_ROOT from step 1:
+   ```
+   cp "${PLUGIN_ROOT}/templates/checkin_template.tex" templates/checkin_template.tex
+   cp "${PLUGIN_ROOT}/templates/cycle_notes.md" templates/cycle_notes.md
+   ```
+
+7. **Create the project `CLAUDE.md`.** This is the most important file — it contains ALL the system instructions plus project-specific context.
+
+   a. Read the system instructions from `${PLUGIN_ROOT}/instructions/system.md`.
+
+   b. Create `CLAUDE.md` by prepending a project-specific header to the system instructions. The header should be:
 
    ```markdown
    # <Project Name>
@@ -108,6 +121,10 @@ The user wants to create a new research project. Do the following:
 
    ## Domain Notes
    (to be filled during exploration)
+
+   ---
+
+   <contents of system.md>
    ```
 
    The actionable instruction tells the student HOW to use the preference. Examples:
@@ -117,9 +134,8 @@ The user wants to create a new research project. Do the following:
    - **Compute**: SLURM cluster — write batch scripts for training, never run GPU jobs interactively
    - **Experiment tracking**: Weights & Biases — log all runs with `wandb.init(project='<name>')`
    - **Visualization**: matplotlib + seaborn — seaborn for statistical plots, matplotlib for custom figures
-   - **Inference framework**: vLLM — use for batched generation, HF transformers for tokenization only
 
-6. **Create `state.yaml`** with:
+8. **Create `state.yaml`** with:
    ```yaml
    phase: rd
    cycle: 1
@@ -131,9 +147,12 @@ The user wants to create a new research project. Do the following:
    notes: "Project created. In pre-project planning meeting."
    ```
 
-7. **Copy `templates/cycle_notes.md`** to `cycles/cycle_01/notes.md`.
+9. **Copy cycle notes template** to `cycles/cycle_01/notes.md`:
+   ```
+   cp templates/cycle_notes.md cycles/cycle_01/notes.md
+   ```
 
-8. **Create `requirements.txt`** based on the confirmed preferences.
+10. **Create `requirements.txt`** based on the confirmed preferences.
 
    Start with the base set:
    ```
@@ -152,8 +171,17 @@ The user wants to create a new research project. Do the following:
 
    Use your knowledge of Python packaging to determine the right pip package names. Do NOT pin versions yet — that happens after install.
 
-9. **Create the virtual environment**: `python -m venv venv && source venv/bin/activate && pip install -r requirements.txt`. Then update `requirements.txt` with pinned versions: `pip freeze > requirements.txt`.
+11. **Create the virtual environment**: `python -m venv venv && source venv/bin/activate && pip install -r requirements.txt`. Then update `requirements.txt` with pinned versions: `pip freeze > requirements.txt`.
 
-10. **Start a conversation about the project plan.** Ask the supervisor to describe their vision: the problem space, initial directions, possible outcomes, and any constraints. Distill this into `plan.md` together. This is the north star document — it should capture the research vision at a high level, not a task list.
+12. **Create a `.gitignore`** for the project:
+    ```
+    venv/
+    __pycache__/
+    *.pyc
+    .ipynb_checkpoints/
+    *.egg-info/
+    ```
 
-11. **Confirm** to the user: show the created structure, the selected preferences, and explain that we are now in the **planning meeting** (Phase 1 of onboarding). The conversation should focus on defining the research vision, problem space, initial directions, and drafting `plan.md` together. Once the plan is approved, the student will proceed to Phase 2: a deep, autonomous literature review before the first Monday check-in.
+13. **Start a conversation about the project plan.** Ask the supervisor to describe their vision: the problem space, initial directions, possible outcomes, and any constraints. Distill this into `plan.md` together. This is the north star document — it should capture the research vision at a high level, not a task list.
+
+14. **Confirm** to the user: show the created structure, the selected preferences, and explain that we are now in the **planning meeting** (Phase 1 of onboarding). The conversation should focus on defining the research vision, problem space, initial directions, and drafting `plan.md` together. Once the plan is approved, the student will proceed to Phase 2: a deep, autonomous literature review before the first Monday check-in.

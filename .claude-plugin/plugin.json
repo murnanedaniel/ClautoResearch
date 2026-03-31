@@ -1,0 +1,9 @@
+{
+  "name": "clauto-research",
+  "version": "1.0.0",
+  "description": "AI Scientist built on Claude Code — R&D cycles with LaTeX slide deck check-ins",
+  "author": { "name": "Daniel Murnane" },
+  "homepage": "https://github.com/murnanedaniel/ClautoResearch",
+  "repository": "https://github.com/murnanedaniel/ClautoResearch",
+  "license": "MIT"
+}

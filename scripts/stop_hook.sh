@@ -22,18 +22,13 @@ if echo "$INPUT" | grep -q '"stop_hook_active" *: *true'; then
     STOP_HOOK_ACTIVE="true"
 fi
 
-SESSION_ID=$(echo "$INPUT" | grep -o '"session_id" *: *"[^"]*"' | sed 's/.*: *"//;s/"//')
+SESSION_ID=$(echo "$INPUT" | grep -o '"session_id" *: *"[^"]*"' | sed 's/.*: *"//;s/"//' || true)
 SESSION_ID="${SESSION_ID:-unknown}"
 
 # --- Find active project ---
-PROJECTS_DIR="$CLAUDE_PROJECT_DIR/projects"
-if [ ! -d "$PROJECTS_DIR" ]; then
-    exit 0  # No projects — allow stop
-fi
-
-STATE_FILE=$(find "$PROJECTS_DIR" -name "state.yaml" -type f -printf '%T@ %p\n' 2>/dev/null | sort -rn | head -1 | cut -d' ' -f2-)
-if [ -z "$STATE_FILE" ]; then
-    exit 0
+STATE_FILE="$CLAUDE_PROJECT_DIR/state.yaml"
+if [ ! -f "$STATE_FILE" ]; then
+    exit 0  # No project — allow stop
 fi
 
 # --- Parse state.yaml ---
@@ -55,7 +50,7 @@ if [ "$MODE" = "meeting" ]; then
 fi
 
 # --- Check slides ---
-PROJECT_DIR=$(dirname "$STATE_FILE")
+PROJECT_DIR="$CLAUDE_PROJECT_DIR"
 CYCLE_DIR="$PROJECT_DIR/cycles/cycle_$(printf '%02d' "$CYCLE")"
 SLIDES_DIR="$CYCLE_DIR/slides"
 

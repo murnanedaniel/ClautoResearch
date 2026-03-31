@@ -33,28 +33,38 @@ Wed → Sun: Execution
 
 When results are ready, a separate **writing phase** drafts the paper — and can drop back into R&D when gaps appear.
 
-## Try It
+## Install
 
-**CLI:**
-```bash
-git clone git@github.com:murnanedaniel/ClautoResearch.git && cd ClautoResearch && claude --dangerously-skip-permissions
-```
-
-**VS Code:** Clone the repo, open it in VS Code with the [Claude Code extension](https://marketplace.visualstudio.com/items?itemName=anthropic.claude-code), and open the Claude panel.
-
-Then type: `/new-project "Your research topic"`
-
-That's it. Claude takes it from there.
-
-## How It Works (details)
+ClautoResearch is a Claude Code plugin. Install it once, use it in any project.
 
 **Prerequisites**: [Claude Code](https://claude.com/claude-code) installed, `pdflatex` available.
 
-`/new-project` scaffolds a project under `projects/` and starts a conversation about the project plan. From there, just talk to Claude — it reads the system instructions from `CLAUDE.md`, picks up project state from `state.yaml`, and knows what to do. It will work through the R&D cycle steps and automatically produce slide decks at each gate for your review.
+```bash
+# Add the marketplace
+claude plugin marketplace add murnanedaniel/ClautoResearch
 
-Two explicit commands:
-- `/new-project "topic"` — scaffold a new research project
-- `/write` — switch to paper-writing mode (when you're ready)
+# Install the plugin
+claude plugin install clauto-research
+```
+
+## Start a Project
+
+```bash
+mkdir my-research && cd my-research
+claude
+```
+
+Then type:
+
+```
+/clauto-research:new-project "Your research topic"
+```
+
+That's it. Claude scaffolds the project, collects your tool preferences, and starts a planning meeting. From there, it works through the R&D cycle steps and automatically produces slide decks at each gate for your review.
+
+Two commands:
+- `/clauto-research:new-project "topic"` — scaffold a new research project
+- `/clauto-research:write` — switch to paper-writing mode (when you're ready)
 
 Everything else (literature search, experiment design, coding, running studies, producing check-in slides) happens naturally as Claude follows the workflow.
 
@@ -62,46 +72,50 @@ Everything else (literature search, experiment design, coding, running studies, 
 
 ## Project Structure
 
+Each project is a standalone directory:
+
 ```
-ClautoResearch/
-├── CLAUDE.md                    # System instructions (the "constitution")
-├── .claude/
-│   ├── skills/                  # Slash commands
-│   │   ├── new-project/         #   /new-project — scaffold a research project
-│   │   └── write/               #   /write — enter writing phase
-│   ├── hooks/
-│   │   └── enforce_checkin.sh   #   Ensures slides are produced at gate points
-│   └── settings.json            #   Hook configuration
-├── templates/
-│   ├── checkin_template.tex     # Beamer slide deck template
-│   └── cycle_notes.md           # Cycle notes/scratchpad template
-├── literature/                  # System-level literature reviews
-└── projects/                    # Your research projects live here
-    └── <project-name>/
-        ├── CLAUDE.md            # Project-specific context
-        ├── state.yaml           # Current cycle/step/direction/velocity
-        ├── plan.md              # Long-running project plan (north star)
-        ├── src/                 # Persistent code (promoted from cycles)
-        │   ├── data/            # Data loading, preprocessing
-        │   ├── models/          # Model definitions
-        │   └── utils/           # Shared utilities
-        ├── literature/          # Project-specific references
-        ├── cycles/              # cycle_01/, cycle_02/, ...
-        │   └── cycle_NN/
-        │       ├── notes.md     # Cycle scratchpad (from template)
-        │       ├── slides/      # Check-in PDFs
-        │       ├── code/        # Experiments (notebooks early, scripts later)
-        │       └── results/     # Outputs, plots, metrics
-        └── paper/               # Paper drafts (writing phase)
+my-research/
+├── CLAUDE.md            # System instructions + project-specific context
+├── state.yaml           # Current cycle/step/direction/velocity
+├── plan.md              # Long-running project plan (north star)
+├── templates/           # Slide deck & notes templates (from plugin)
+├── requirements.txt     # Pinned Python dependencies
+├── src/                 # Persistent code (promoted from cycles)
+│   ├── data/            # Data loading, preprocessing
+│   ├── models/          # Model definitions
+│   └── utils/           # Shared utilities
+├── literature/          # Project-specific references
+├── cycles/              # cycle_01/, cycle_02/, ...
+│   └── cycle_NN/
+│       ├── notes.md     # Cycle scratchpad (from template)
+│       ├── slides/      # Check-in PDFs
+│       ├── code/        # Experiments (notebooks early, scripts later)
+│       └── results/     # Outputs, plots, metrics
+└── paper/               # Paper drafts (writing phase)
 ```
 
-The system (root) defines *how* research is done. Each project (under `projects/`) is a specific research effort with its own state, cycles, and results.
+## Plugin Structure
+
+For contributors — this is what the plugin contains:
+
+```
+ClautoResearch/
+├── .claude-plugin/          # Plugin manifest & marketplace
+├── hooks/hooks.json         # Hook event bindings
+├── scripts/                 # Hook enforcement scripts
+├── skills/                  # /new-project, /write
+├── instructions/system.md   # System instructions (written to project CLAUDE.md)
+├── templates/               # LaTeX Beamer template, cycle notes template
+├── literature/              # Landscape review of AI scientist systems
+└── assets/workflow.gif
+```
 
 ## Design Philosophy
 
-- **Claude-native**: Uses Claude Code skills, CLAUDE.md hierarchy, and hooks — not a Python orchestration framework
+- **Claude-native**: Uses Claude Code skills, hooks, and plugin system — not a Python orchestration framework
 - **Supervisor in the loop**: Every phase gate is a slide deck review. No auto-approve mode
-- **Minimal by design**: One model, one repo, two slash commands, one hook
+- **Minimal by design**: One model, two slash commands, four hooks
 - **Real research workflow**: Modeled on how PhD advisors actually mentor students, not on pipeline diagrams
 
 ## License
