@@ -2,11 +2,10 @@
   "hooks": {
     "UserPromptSubmit": [
       {
-        "matcher": "",
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/enforce_checkin.sh\"",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/enforce_checkin.sh\"",
             "timeout": 5
           }
         ]
@@ -18,12 +17,12 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/monitor_jobs.sh\"",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/monitor_jobs.sh\"",
             "timeout": 5
           },
           {
             "type": "command",
-            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/clean_latex.sh\"",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/clean_latex.sh\"",
             "timeout": 5
           }
         ]
@@ -31,11 +30,10 @@
     ],
     "Stop": [
       {
-        "matcher": "",
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/stop_hook.sh\"",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/stop_hook.sh\"",
             "timeout": 5
           }
         ]

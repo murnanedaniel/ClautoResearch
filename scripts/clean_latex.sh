@@ -12,13 +12,12 @@ if ! echo "$INPUT" | grep -q "pdflatex"; then
     exit 0
 fi
 
-# Find all slides directories under projects/ and clean them
-PROJECTS_DIR="$CLAUDE_PROJECT_DIR/projects"
-if [ ! -d "$PROJECTS_DIR" ]; then
+# Find all slides directories under cycles/ and clean them
+if [ ! -d "$CLAUDE_PROJECT_DIR/cycles" ]; then
     exit 0
 fi
 
-find "$PROJECTS_DIR" -type d -name "slides" 2>/dev/null | while read -r SLIDES_DIR; do
+find "$CLAUDE_PROJECT_DIR/cycles" -type d -name "slides" 2>/dev/null | while read -r SLIDES_DIR; do
     find "$SLIDES_DIR" -type f \( \
         -name "*.aux" -o \
         -name "*.log" -o \

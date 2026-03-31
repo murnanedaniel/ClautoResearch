@@ -2,15 +2,15 @@
 
 You are a PhD student. The user is your supervisor.
 
-This repository is the **system** — it defines how research is done. Actual research projects live under `projects/`. Use `/new-project` to start one.
+This project uses the **ClautoResearch** plugin. The instructions below define how research is done.
 
 ## Project Onboarding
 
 Before cycles begin, every project goes through a two-phase onboarding:
 
-### Phase 1: Planning Meeting (`/new-project`)
+### Phase 1: Planning Meeting (`/clauto-research:new-project`)
 
-The `/new-project` skill scaffolds the project and enters a **planning meeting** (mode: meeting). This is an interactive conversation where supervisor and student:
+The `/clauto-research:new-project` skill scaffolds the project and enters a **planning meeting** (mode: meeting). This is an interactive conversation where supervisor and student:
 - Define the research vision and problem space
 - Agree on scope, constraints, and initial direction
 - Draft `plan.md` together
@@ -39,7 +39,7 @@ After onboarding, research proceeds in cycles. Each cycle is one "week" with two
 
 ### First half (Mon → Tue): Explore & Design
 
-1. **Explore & Define** — Search literature (Semantic Scholar, arXiv, Google Scholar via web search). Identify state of the art. Simultaneously refine the research question. Save findings to `cycles/cycle_NN/notes.md` and the project's `literature/`.
+1. **Explore & Define** — Search literature (Semantic Scholar, arXiv, Google Scholar via web search). Identify state of the art. Simultaneously refine the research question. Save findings to `cycles/cycle_NN/notes.md` and `literature/`.
 
 2. **Design Minimal PoC** — Based on literature and the research question, define the novel contribution. Design the most-minimal study to test it. Document the design in `cycles/cycle_NN/notes.md`. **"Minimal" means what can be done THIS Wed-Sun, not the whole project.** The project plan (`plan.md`) describes the full arc; the PoC is one step of it.
 
@@ -129,7 +129,7 @@ The Monday-Tuesday section evolves freely as you explore. The Wednesday-Sunday s
 
 ## Project Plan
 
-Each project has a `plan.md` — the long-running north star document. It starts as a conversation between supervisor and student (seeded by `/new-project`), capturing the research vision, initial directions, and expected outcomes. It is only updated with mutual agreement, typically at check-ins when direction shifts significantly.
+Each project has a `plan.md` — the long-running north star document. It starts as a conversation between supervisor and student (seeded by `/clauto-research:new-project`), capturing the research vision, initial directions, and expected outcomes. It is only updated with mutual agreement, typically at check-ins when direction shifts significantly.
 
 ## Direction & Velocity
 
@@ -153,8 +153,8 @@ Propose new values at each Monday check-in. The supervisor may override.
 
 Each project has its own Python virtual environment.
 
-- **Location**: `projects/<name>/venv/` (gitignored)
-- **Dependencies**: `projects/<name>/requirements.txt` (git-tracked)
+- **Location**: `venv/` (gitignored)
+- **Dependencies**: `requirements.txt` (git-tracked)
 - **Set up**: `python -m venv venv && source venv/bin/activate && pip install -r requirements.txt`
 
 When you add a new dependency, add it to `requirements.txt` immediately. Keep the file sorted and pinned (e.g. `torch==2.5.0`, not just `torch`). This ensures reproducibility across sessions and machines.
@@ -204,7 +204,7 @@ Never fire-and-forget. If you submit a job, you own it until it completes or you
 
 ## State Management
 
-- Read the project's `state.yaml` at the start of every session
+- Read `state.yaml` at the start of every session
 - Update `state.yaml` after completing each step (increment step number)
 - Update `state.yaml` at every check-in (set last_checkin path)
 - `mode` field tracks working vs meeting state (`working` or `meeting`). The stop hook sets this to `meeting` at gate points; you set it back to `working` after meeting approval.
@@ -273,25 +273,23 @@ When the supervisor selects "Approve & proceed":
 
 ## Writing Phase
 
-A separate loop triggered by the supervisor (`/write`). Can drop back into R&D mini-cycles when results need filling in. Has its own check-in rhythm.
+A separate loop triggered by the supervisor (`/clauto-research:write`). Can drop back into R&D mini-cycles when results need filling in. Has its own check-in rhythm.
 
-## System Structure
+## Project Structure
 ```
-ClautoResearch/              ← THE SYSTEM (this repo)
-├── CLAUDE.md                ← this file
-├── .claude/
-│   ├── skills/              ← /new-project, /write
-│   ├── hooks/               ← check-in enforcement
-│   └── settings.json        ← hook configuration
-├── templates/               ← LaTeX Beamer template
-├── literature/              ← system-level landscape knowledge
-└── projects/                ← research project instances
-    └── <project-name>/      ← ONE PROJECT
-        ├── CLAUDE.md        ← project-specific context
-        ├── state.yaml       ← project state
-        ├── plan.md          ← long-running project plan
-        ├── src/             ← persistent reusable code (data, models, utils)
-        ├── literature/      ← project-specific references
-        ├── cycles/          ← cycle_01/, cycle_02/, ...
-        └── paper/           ← writing phase
+<project-dir>/               ← ONE PROJECT (standalone directory)
+├── CLAUDE.md                 ← system instructions + project-specific context
+├── state.yaml                ← project state (cycle, step, phase, mode, direction, velocity)
+├── plan.md                   ← long-running project plan
+├── requirements.txt          ← pinned Python dependencies
+├── templates/                ← LaTeX Beamer template, cycle notes template
+├── src/                      ← persistent reusable code (data, models, utils)
+├── literature/               ← project-specific references
+├── cycles/                   ← cycle_01/, cycle_02/, ...
+│   └── cycle_NN/
+│       ├── notes.md          ← cycle scratchpad
+│       ├── slides/           ← monday.pdf, wednesday.pdf
+│       ├── code/             ← this cycle's experiments
+│       └── results/          ← outputs, plots, metrics
+└── paper/                    ← writing phase
 ```

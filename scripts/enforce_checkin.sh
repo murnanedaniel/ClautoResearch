@@ -22,14 +22,9 @@ set -euo pipefail
 # Read hook input from stdin
 INPUT=$(cat)
 
-# Find the most recently modified state.yaml under projects/
-PROJECTS_DIR="$CLAUDE_PROJECT_DIR/projects"
-if [ ! -d "$PROJECTS_DIR" ]; then
-    exit 0
-fi
-
-STATE_FILE=$(find "$PROJECTS_DIR" -name "state.yaml" -type f -printf '%T@ %p\n' 2>/dev/null | sort -rn | head -1 | cut -d' ' -f2-)
-if [ -z "$STATE_FILE" ]; then
+# Find state.yaml at the project root
+STATE_FILE="$CLAUDE_PROJECT_DIR/state.yaml"
+if [ ! -f "$STATE_FILE" ]; then
     exit 0
 fi
 
@@ -75,7 +70,7 @@ EOF
 fi
 
 # Determine the project directory
-PROJECT_DIR=$(dirname "$STATE_FILE")
+PROJECT_DIR="$CLAUDE_PROJECT_DIR"
 CYCLE_DIR="$PROJECT_DIR/cycles/cycle_$(printf '%02d' "$CYCLE")"
 SLIDES_DIR="$CYCLE_DIR/slides"
 
